@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ЧПОКЕР — честный покер</title>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
   :root{
     --bg:#07090b;
@@ -361,6 +362,18 @@
   .btn.mini{padding:9px 16px;font-size:13px;margin-top:8px}
   .net-status{margin-top:16px;font-size:13px;color:var(--neon);background:rgba(25,227,177,.07);
     border:1px solid rgba(25,227,177,.2);border-radius:10px;padding:10px 14px}
+  .room-panel{margin-top:20px}
+  .room-panel h3{font-size:16px;display:flex;align-items:center;gap:10px}
+  .rec{font-size:11px;font-weight:800;letter-spacing:.04em;color:#03130e;background:var(--neon);
+    padding:3px 9px;border-radius:20px}
+  .room-link-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .room-link{flex:1;min-width:220px;background:#0a1013;color:var(--neon);border:1px solid var(--line);
+    border-radius:10px;padding:11px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px}
+  .manual-fallback{margin-top:16px;border:1px solid var(--line);border-radius:14px;padding:4px 16px;background:rgba(255,255,255,.015)}
+  .manual-fallback summary{cursor:pointer;padding:12px 0;font-size:13px;color:var(--muted);font-weight:600}
+  .manual-fallback summary:hover{color:var(--ink)}
+  .manual-fallback .online-grid{margin-top:6px;margin-bottom:16px}
+  .room-join-cta{margin-top:14px}
 
   /* ============================================================
      ТЕМА ?1 — тёплая (фото table.jpg + дилер ars.jpg)
@@ -571,34 +584,52 @@
       «видит» карты соперника — играйте лишь с теми, кому доверяете, и никогда на реальные деньги.
     </div>
 
-    <div class="online-grid">
-      <!-- HOST -->
-      <div class="panel">
-        <h3>🎲 Создать игру (хост / дилер)</h3>
-        <button class="btn btn-primary" style="margin:8px 0" onclick="hostCreate()">Создать приглашение</button>
-        <div id="hostStep2" style="display:none">
-          <label class="sig-lbl">1. Ваш код-приглашение (отправьте другу):</label>
-          <textarea id="netOfferOut" class="sig" readonly onclick="this.select()"></textarea>
-          <button class="btn btn-ghost mini" onclick="copyField('netOfferOut')">Копировать</button>
-          <label class="sig-lbl">2. Вставьте ответный код друга:</label>
-          <textarea id="netAnswerIn" class="sig" placeholder="код-ответ от друга…"></textarea>
-          <button class="btn btn-primary mini" onclick="hostAccept()">Подключиться</button>
-        </div>
-      </div>
-
-      <!-- GUEST -->
-      <div class="panel">
-        <h3>🔗 Присоединиться (гость)</h3>
-        <label class="sig-lbl">1. Вставьте код-приглашение хоста:</label>
-        <textarea id="netOfferIn" class="sig" placeholder="код-приглашение от хоста…"></textarea>
-        <button class="btn btn-primary mini" onclick="guestJoin()">Сгенерировать ответ</button>
-        <div id="guestStep2" style="display:none">
-          <label class="sig-lbl">2. Ваш ответный код (отправьте хосту):</label>
-          <textarea id="netAnswerOut" class="sig" readonly onclick="this.select()"></textarea>
-          <button class="btn btn-ghost mini" onclick="copyField('netAnswerOut')">Копировать</button>
+    <!-- РЕЖИМ ПО ССЫЛКЕ (основной) -->
+    <div class="panel room-panel" id="roomPanel">
+      <h3>🔗 Комната по ссылке <span class="rec">проще всего</span></h3>
+      <p style="color:var(--muted);font-size:13px;margin:.4em 0 14px">
+        Один нажимает «Создать комнату», копирует ссылку и отправляет другу. Друг открывает ссылку — и игра
+        начинается автоматически. Соединение идёт через TURN-релей, поэтому пробивается даже через «строгий» интернет.</p>
+      <button class="btn btn-primary" id="createRoomBtn" onclick="hostRoom()">Создать комнату</button>
+      <div id="roomLinkBox" style="display:none;margin-top:14px">
+        <label class="sig-lbl">Ссылка-приглашение (отправьте другу):</label>
+        <div class="room-link-row">
+          <input id="roomLink" class="room-link" readonly onclick="this.select()">
+          <button class="btn btn-ghost mini" onclick="copyField('roomLink')">Копировать</button>
         </div>
       </div>
     </div>
+
+    <!-- РУЧНОЙ РЕЖИМ (фолбэк, без сторонних сервисов) -->
+    <details class="manual-fallback">
+      <summary>Ручной режим — без сервисов, обмен кодом вручную</summary>
+      <div class="online-grid">
+        <div class="panel">
+          <h3>🎲 Создать игру (хост)</h3>
+          <button class="btn btn-primary mini" onclick="hostCreate()">Создать приглашение</button>
+          <div id="hostStep2" style="display:none">
+            <label class="sig-lbl">1. Ваш код-приглашение (отправьте другу):</label>
+            <textarea id="netOfferOut" class="sig" readonly onclick="this.select()"></textarea>
+            <button class="btn btn-ghost mini" onclick="copyField('netOfferOut')">Копировать</button>
+            <label class="sig-lbl">2. Вставьте ответный код друга:</label>
+            <textarea id="netAnswerIn" class="sig" placeholder="код-ответ от друга…"></textarea>
+            <button class="btn btn-primary mini" onclick="hostAccept()">Подключиться</button>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>🔗 Присоединиться (гость)</h3>
+          <label class="sig-lbl">1. Вставьте код-приглашение хоста:</label>
+          <textarea id="netOfferIn" class="sig" placeholder="код-приглашение от хоста…"></textarea>
+          <button class="btn btn-primary mini" onclick="guestJoin()">Сгенерировать ответ</button>
+          <div id="guestStep2" style="display:none">
+            <label class="sig-lbl">2. Ваш ответный код (отправьте хосту):</label>
+            <textarea id="netAnswerOut" class="sig" readonly onclick="this.select()"></textarea>
+            <button class="btn btn-ghost mini" onclick="copyField('netAnswerOut')">Копировать</button>
+          </div>
+        </div>
+      </div>
+    </details>
+
     <div id="netStatus" class="net-status">Статус: не подключено. Игра идёт в столе выше ↑</div>
   </div>
 </section>
@@ -1261,14 +1292,26 @@ function resetMatch(){
 /* ============================================================
    P2P ОНЛАЙН (WebRTC, ручной обмен кодом, модель «хост-дилер»)
 ============================================================ */
+// STUN + бесплатный TURN-релей (Open Relay) — чинит соединение при «злом» (симметричном) NAT
+const ICE=[
+  {urls:'stun:stun.l.google.com:19302'},
+  {urls:'turn:openrelay.metered.ca:80', username:'openrelayproject', credential:'openrelayproject'},
+  {urls:'turn:openrelay.metered.ca:443', username:'openrelayproject', credential:'openrelayproject'},
+  {urls:'turn:openrelay.metered.ca:443?transport=tcp', username:'openrelayproject', credential:'openrelayproject'}
+];
 const encodeSig=d=>btoa(unescape(encodeURIComponent(JSON.stringify({type:d.type,sdp:d.sdp}))));
 const decodeSig=s=>JSON.parse(decodeURIComponent(escape(atob(s.trim()))));
 function netStatus(t){const el=$('netStatus'); if(el)el.textContent=t;}
-function netSend(obj){ if(NET.ch&&NET.ch.readyState==='open') NET.ch.send(JSON.stringify(obj)); }
+function netIsOpen(){ return NET.mode==='peer' ? (NET.conn&&NET.conn.open) : (NET.ch&&NET.ch.readyState==='open'); }
+function netSend(obj){
+  if(!netIsOpen())return;
+  if(NET.mode==='peer') NET.conn.send(obj);          // PeerJS сам сериализует
+  else NET.ch.send(JSON.stringify(obj));
+}
 
 // снимок состояния для гостя (карты соперника скрыты до вскрытия)
 function netSendState(){
-  if(!(NET.ch&&NET.ch.readyState==='open'))return;
+  if(!netIsOpen())return;
   const snap={
     t:'state',
     viewIndex:GUEST_INDEX,
@@ -1309,8 +1352,8 @@ function applyGuestState(s){
 }
 
 function makePC(){
-  const pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
-  pc.onconnectionstatechange=()=>{ if(['failed','disconnected','closed'].includes(pc.connectionState)) netStatus('Соединение потеряно ('+pc.connectionState+').'); };
+  const pc=new RTCPeerConnection({iceServers:ICE});
+  pc.onconnectionstatechange=()=>{ if(['failed','disconnected','closed'].includes(pc.connectionState)) netStatus('Соединение потеряно ('+pc.connectionState+'). Попробуйте режим «по ссылке» или переподключитесь.'); };
   NET.pc=pc; return pc;
 }
 function waitIce(pc){return new Promise(res=>{
@@ -1335,7 +1378,7 @@ function onNetOpen(){
 
 window.hostCreate=async function(){
   try{
-    NET.role='host';
+    NET.role='host'; NET.mode='manual';
     const pc=makePC();
     netSetupChannel(pc.createDataChannel('game'));
     await pc.setLocalDescription(await pc.createOffer());
@@ -1351,7 +1394,7 @@ window.hostAccept=async function(){
 };
 window.guestJoin=async function(){
   try{
-    NET.role='guest';
+    NET.role='guest'; NET.mode='manual';
     const pc=makePC();
     pc.ondatachannel=e=>netSetupChannel(e.channel);
     await pc.setRemoteDescription(decodeSig($('netOfferIn').value));
@@ -1364,6 +1407,39 @@ window.guestJoin=async function(){
 };
 window.copyField=function(id){ const el=$(id); el.select(); document.execCommand&&document.execCommand('copy');
   try{navigator.clipboard&&navigator.clipboard.writeText(el.value);}catch(e){} };
+
+/* ---------- Комната по ссылке (PeerJS: авто-сигналинг + TURN) ---------- */
+function roomLink(id){ const u=new URL(location.href); u.searchParams.set('room',id); u.hash=''; return u.toString(); }
+function peerOpts(){ return {config:{iceServers:ICE}}; }
+function setupConn(conn){
+  NET.conn=conn;
+  conn.on('open',()=>onNetOpen());
+  conn.on('data',d=>onNetMessage(d));
+  conn.on('close',()=>netStatus('Соперник отключился.'));
+  conn.on('error',e=>netStatus('Ошибка канала: '+(e.message||e.type||e)));
+}
+window.hostRoom=function(){
+  if(typeof Peer==='undefined'){ netStatus('Не загрузилась библиотека для комнат (нет интернета?). Используйте ручной режим ниже.'); return; }
+  NET.role='host'; NET.mode='peer';
+  const id='chpk-'+Math.random().toString(36).slice(2,9);
+  const peer=new Peer(id,peerOpts()); NET.peer=peer;
+  netStatus('Создаём комнату…');
+  peer.on('open',()=>{
+    $('roomLink').value=roomLink(id);
+    $('roomLinkBox').style.display='block';
+    netStatus('🔗 Комната готова. Отправьте ссылку другу и ждите — игра начнётся автоматически.');
+  });
+  peer.on('connection',conn=>{ netStatus('Друг подключается…'); setupConn(conn); });
+  peer.on('error',e=>netStatus('Сеть: '+e.type+(e.message?' — '+e.message:'')+'. Попробуйте ручной режим ниже.'));
+};
+window.joinRoom=function(id){
+  if(typeof Peer==='undefined'){ netStatus('Не загрузилась библиотека для комнат. Используйте ручной режим ниже.'); return; }
+  NET.role='guest'; NET.mode='peer';
+  const peer=new Peer(peerOpts()); NET.peer=peer;
+  netStatus('Подключаемся к комнате '+id+'…');
+  peer.on('open',()=>{ setupConn(peer.connect(id,{reliable:true})); });
+  peer.on('error',e=>netStatus('Сеть: '+e.type+(e.message?' — '+e.message:'')+'. Попросите хоста дать новую ссылку или используйте ручной режим.'));
+};
 
 function startOnlineGame(){
   players=[
@@ -1450,6 +1526,17 @@ function renderCalc(){
 $('startBtn').onclick=playHand;
 render();
 renderCalc();
+
+// автоподключение, если открыли по ссылке-приглашению (?room=…)
+(function(){
+  const room=new URLSearchParams(location.search).get('room');
+  if(!room) return;
+  const p=$('roomPanel');
+  if(p) p.querySelector('h3').innerHTML='🔗 Вход в комнату по ссылке';
+  const cr=$('createRoomBtn'); if(cr){ cr.textContent='Подключиться к комнате'; cr.onclick=()=>joinRoom(room); }
+  document.getElementById('online').scrollIntoView({behavior:'smooth'});
+  joinRoom(room);
+})();
 </script>
 </body>
 </html>
