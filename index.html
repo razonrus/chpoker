@@ -523,7 +523,7 @@
   <div class="wrap">
     <div class="eyebrow">стол №7 · только для своих</div>
     <h2 style="font-size:28px">Сыграй по честным правилам</h2>
-    <p class="sub" style="color:var(--muted);margin-top:-2px">Вы против Полины и Вани. Следите за старшинством комбинаций справа — оно живое.</p>
+    <p class="sub" style="color:var(--muted);margin-top:-2px"><span id="oppLine">Ваши соперники — Полина и Ваня</span>. Следите за старшинством комбинаций справа — оно живое.</p>
 
     <div class="table-zone">
       <!-- TABLE -->
@@ -1524,6 +1524,7 @@ function renderCalc(){
 
 // init
 $('startBtn').onclick=playHand;
+if($('oppLine')) $('oppLine').textContent='Ваши соперники — '+players[1].name+' и '+players[2].name;
 render();
 renderCalc();
 
