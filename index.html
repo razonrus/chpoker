@@ -361,6 +361,7 @@
       <div class="hero-cta">
         <button class="btn btn-primary" onclick="document.getElementById('game').scrollIntoView({behavior:'smooth'})">Сыграть партию</button>
         <button class="btn btn-ghost" onclick="document.getElementById('rules').scrollIntoView({behavior:'smooth'})">Как это работает</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('calc').scrollIntoView({behavior:'smooth'})">Калькулятор стола</button>
       </div>
     </div>
   </div>
@@ -475,26 +476,16 @@
     <div class="eyebrow">оффлайн-калькулятор</div>
     <h2 style="font-size:28px">Старшинство для своего стола</h2>
     <p style="color:var(--muted);margin-top:-2px;max-width:680px">
-      Играете живьём за реальным столом? Введите общие карты (и, по желанию, свои две) —
+      Играете живьём за реальным столом? Введите общие карты —
       и сразу увидите актуальное старшинство комбинаций по правилам ЧПОКЕРА с вероятностями.</p>
 
     <div class="calc-zone">
       <!-- ВВОД -->
       <div class="panel calc-input">
-        <div class="calc-target">
-          <span class="calc-target-lbl">Добавлять карту в:</span>
-          <button class="tgl active" id="tgtBoard" onclick="setCalcTarget('board')">Стол <i id="boardCount">0/5</i></button>
-          <button class="tgl" id="tgtHole" onclick="setCalcTarget('hole')">Мои карты <i id="holeCount">0/2</i></button>
-        </div>
-
         <div class="calc-slots">
           <div class="slot-group">
-            <div class="slot-lbl">🃏 Стол (общие карты)</div>
+            <div class="slot-lbl">🃏 Стол (общие карты) <i id="boardCount" style="font-style:normal;color:var(--muted)">0/5</i></div>
             <div class="slot-row" id="boardSlots"></div>
-          </div>
-          <div class="slot-group">
-            <div class="slot-lbl">🫳 Ваши карты <span style="color:var(--muted)">(необязательно)</span></div>
-            <div class="slot-row" id="holeSlots"></div>
           </div>
         </div>
 
@@ -510,7 +501,6 @@
       <div class="panel calc-result">
         <h3>🔥 Старшинство сейчас</h3>
         <div class="sub" id="calcSub">Добавьте карты на стол, чтобы увидеть рейтинг.</div>
-        <div id="calcMine" class="calc-mine" style="display:none"></div>
         <div id="calcRank"></div>
         <div class="calc-note">% — доля возможных рук соперников, которые физически могут собрать эту комбинацию на введённом столе. Чем меньше — тем старше.</div>
       </div>
@@ -1054,16 +1044,15 @@ function resetMatch(){
 /* ============================================================
    ОФФЛАЙН-КАЛЬКУЛЯТОР СТАРШИНСТВА
 ============================================================ */
-let calcBoard=[], calcHole=[], calcTarget='board';
-const calcUsed=()=>new Set([...calcBoard,...calcHole].map(cardId));
+let calcBoard=[];
+const calcUsed=()=>new Set(calcBoard.map(cardId));
 
 function palCardHTML(c){
   const red=RED.includes(c.s)?'red':'';
   const id=cardId(c);
-  let mark='';
-  if(calcBoard.some(x=>cardId(x)===id)) mark='in-board';
-  else if(calcHole.some(x=>cardId(x)===id)) mark='in-hole';
-  const used=mark?'':(calcUsed().has(id)?'used':'');
+  const inBoard=calcBoard.some(x=>cardId(x)===id);
+  const mark=inBoard?'in-board':'';
+  const used=(!inBoard && calcBoard.length>=5)?'used':'';
   return `<div class="pal-card ${red} ${mark} ${used}" onclick="calcPick(${c.r},${c.s})">${lab(c.r)}<span class="s">${SUITS[c.s]}</span></div>`;
 }
 function buildPalette(){
@@ -1086,59 +1075,40 @@ function slotsHTML(arr,max,kind){
   }
   return h;
 }
-window.setCalcTarget=function(t){
-  calcTarget=t;
-  $('tgtBoard').classList.toggle('active',t==='board');
-  $('tgtHole').classList.toggle('active',t==='hole');
-};
 window.calcPick=function(r,s){
-  const c={r,s}, id=cardId(c);
-  if(calcUsed().has(id)) return;                 // уже выбрана
-  if(calcTarget==='board'){ if(calcBoard.length>=5){setCalcTarget('hole'); if(calcHole.length<2)calcHole.push(c);} else calcBoard.push(c); }
-  else { if(calcHole.length>=2) return; calcHole.push(c); }
+  const c={r,s};
+  if(calcUsed().has(cardId(c))) return;          // уже выбрана
+  if(calcBoard.length>=5) return;                // на столе максимум 5 карт
+  calcBoard.push(c);
   renderCalc();
 };
-window.calcRemove=function(kind,i){
-  if(kind==='board') calcBoard.splice(i,1); else calcHole.splice(i,1);
-  renderCalc();
-};
-window.clearCalc=function(){ calcBoard=[];calcHole=[];renderCalc(); };
+window.calcRemove=function(kind,i){ calcBoard.splice(i,1); renderCalc(); };
+window.clearCalc=function(){ calcBoard=[];renderCalc(); };
 window.randomFlop=function(){
   const d=fullDeck(); for(let i=d.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[d[i],d[j]]=[d[j],d[i]];}
-  calcBoard=d.slice(0,3); calcHole=[]; setCalcTarget('board'); renderCalc();
+  calcBoard=d.slice(0,3); renderCalc();
 };
 function renderCalc(){
   $('boardSlots').innerHTML=slotsHTML(calcBoard,5,'board');
-  $('holeSlots').innerHTML=slotsHTML(calcHole,2,'hole');
   $('boardCount').textContent=calcBoard.length+'/5';
-  $('holeCount').textContent=calcHole.length+'/2';
   buildPalette();
 
-  const out=$('calcRank'), mine=$('calcMine');
+  const out=$('calcRank');
   if(calcBoard.length===0){
     out.innerHTML='';
     $('calcSub').textContent='Добавьте карты на стол, чтобы увидеть рейтинг.';
-    mine.style.display='none';
     return;
   }
   $('calcSub').textContent='Стол из '+calcBoard.length+' карт. Сильные (редкие) — сверху.';
   const pr=computeRanking(calcBoard);
   const order=rankingOrder(pr);
-  const myKey=calcHole.length? effective(calcHole,calcBoard,pr).key : null;
   out.innerHTML=order.map((c,i)=>{
     const p=pr[c.key],pct=Math.round(p*100);
-    const guaranteed=p>0.999, isMine=c.key===myKey;
-    return `<div class="rank-row ${guaranteed?'guaranteed':''} ${isMine?'mine':''}">
+    const guaranteed=p>0.999;
+    return `<div class="rank-row ${guaranteed?'guaranteed':''}">
       <div class="pos">#${i+1}</div><div class="lab">${c.label}</div>
       <div class="bar"><i style="width:${pct}%"></i></div><div class="pct">${pct}%</div></div>`;
   }).join('');
-
-  if(calcHole.length){
-    const eff=effective(calcHole,calcBoard,pr);
-    const rankPos=order.findIndex(c=>c.key===eff.key)+1;
-    mine.style.display='block';
-    mine.innerHTML=`Ваша рука сейчас: <b>${eff.label}</b> — редкость ${Math.round(eff.prob*100)}%, место <b>#${rankPos}</b> в старшинстве.`;
-  } else mine.style.display='none';
 }
 
 // init
