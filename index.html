@@ -60,6 +60,8 @@
   .hero-bg .vign{position:absolute;inset:0;box-shadow:inset 0 0 220px 60px #000;pointer-events:none}
   .hero-bg .scan{position:absolute;inset:0;opacity:.25;pointer-events:none;
     background:repeating-linear-gradient(0deg,rgba(0,0,0,.0) 0 2px,rgba(0,0,0,.25) 3px)}
+  .hero-bg .still{position:absolute;inset:0;display:none;background-size:cover;background-position:center;
+    filter:saturate(1.05)}
 
   /* dealer portrait, duotone, bleeding off the right edge */
   .hero-portrait{position:absolute;right:-2%;bottom:-4%;top:0;width:54%;z-index:1;pointer-events:none;
@@ -330,6 +332,60 @@
   .calc-mine b{color:var(--neon)}
   .calc-note{font-size:11px;color:var(--muted);margin-top:12px;line-height:1.45}
   #calcRank .rank-row{cursor:default}
+
+  /* ============================================================
+     ТЕМА ?1 — тёплая (фото table.jpg + дилер ars.jpg)
+  ============================================================ */
+  body.theme-2{
+    --bg:#0f0c08;
+    --felt:#15663f;
+    --felt-edge:#0a3a24;
+    --neon:#34d08a;          /* натуральная зелёная фишка вместо холодного циана */
+    --neon-dim:#178a55;
+    --amber:#ffb15a;         /* тёплый вольфрамовый свет */
+    --amber-glow:#ff8a2a;
+    --ink:#f4efe6;
+    --muted:#a89c8a;
+    --line:#2c2519;
+    --gold:#ffd47a;
+    background:
+      radial-gradient(1200px 700px at 50% -10%, #1d2a1f 0%, transparent 60%),
+      radial-gradient(900px 600px at 80% 110%, #241808 0%, transparent 55%),
+      var(--bg);
+  }
+  body.theme-2 .smoke{opacity:.35}
+
+  /* фон героя: статичное фото вместо видео */
+  body.theme-2 .hero-bg video{display:none}
+  body.theme-2 .hero-bg .still{display:block}
+  body.theme-2 .hero-bg .scan{opacity:.12}
+  body.theme-2 .hero-bg .vign{box-shadow:inset 0 0 240px 70px #000}
+  body.theme-2 .hero-bg .grade{
+    background:
+      linear-gradient(90deg, rgba(12,9,5,.95) 0%, rgba(12,9,5,.78) 36%, rgba(12,9,5,.30) 66%, rgba(12,9,5,.55) 100%),
+      radial-gradient(80% 90% at 18% 50%, rgba(10,20,12,.45), transparent 70%),
+      radial-gradient(120% 120% at 80% 15%, rgba(52,208,138,.12), transparent 55%);
+  }
+
+  /* дилер-медальон: кадрируем круглый портрет (источник — скрин телефона) */
+  body.theme-2 .hero-portrait{width:auto;right:max(3%,calc(50% - 540px));left:auto;top:0;bottom:0;
+    align-items:center;justify-content:flex-end}
+  body.theme-2 .hero-portrait img{
+    height:auto;width:min(380px,40vw);aspect-ratio:1/1;object-fit:cover;object-position:50% 40%;
+    border-radius:50%;opacity:1;mix-blend-mode:normal;
+    -webkit-mask-image:none;mask-image:none;
+    filter:grayscale(1) contrast(1.06) brightness(1.02);
+    border:3px solid rgba(52,208,138,.4);
+    box-shadow:0 0 0 6px rgba(0,0,0,.35),0 30px 70px -20px #000,0 0 60px -10px rgba(52,208,138,.35)}
+  body.theme-2 .hero-portrait::after{
+    background:radial-gradient(60% 60% at 50% 45%, rgba(255,177,90,.16), transparent 70%)}
+  @media(max-width:820px){
+    body.theme-2 .hero-portrait{position:absolute;right:0;left:0;justify-content:center;opacity:.55;top:auto;bottom:6%}
+    body.theme-2 .hero-portrait img{width:200px}
+  }
+
+  /* аватар дилера в игре — фокус на лице круглого скрина */
+  body.theme-2 #dealerImg2{object-position:50% 40%}
 </style>
 </head>
 <body>
@@ -339,6 +395,7 @@
 <header class="hero">
   <div class="hero-bg">
     <video id="heroVideo" autoplay muted loop playsinline></video>
+    <div class="still" id="heroStill"></div>
     <div class="grade"></div>
     <div class="scan"></div>
     <div class="vign"></div>
@@ -515,20 +572,30 @@
    Загрузка пользовательских ассетов (видео/фото) с фолбэком
 ============================================================ */
 (function(){
-  // фоновое видео героя
+  // альтернативная тема ?1 — другие фото дилера/фона и тёплая цветовая схема
+  const ALT = new URLSearchParams(location.search).has('1');
+  const DEALER_SRC = ALT ? 'media2/ars.jpg' : 'assets/dealer.jpg';
+  if(ALT) document.body.classList.add('theme-2');
+
   const v=document.getElementById('heroVideo');
-  const src=document.createElement('source'); src.src='assets/poker.mp4'; src.type='video/mp4'; v.appendChild(src);
-  v.addEventListener('error',()=>{document.querySelector('.hero').style.background=
-    'radial-gradient(120% 90% at 20% 30%, #133a2f, #07090b 70%)';});
-  v.load();
+  if(ALT){
+    // фон — статичное фото стола вместо видео
+    document.getElementById('heroStill').style.backgroundImage='url("media2/table.jpg")';
+  }else{
+    // фоновое видео героя (стандартная тема)
+    const src=document.createElement('source'); src.src='assets/poker.mp4'; src.type='video/mp4'; v.appendChild(src);
+    v.addEventListener('error',()=>{document.querySelector('.hero').style.background=
+      'radial-gradient(120% 90% at 20% 30%, #133a2f, #07090b 70%)';});
+    v.load();
+  }
   // портрет дилера в герое — если файла нет, прячем мягко
   const hp=document.getElementById('dealerImg');
-  if(hp) hp.onerror=()=>{hp.style.display='none';};
+  if(hp){ hp.onerror=()=>{hp.style.display='none';}; hp.src=DEALER_SRC; }
   // маленький аватар дилера в игровой панели
   const img2=document.getElementById('dealerImg2'), fb2=document.getElementById('dealerFallback2');
   if(img2){ img2.onload=()=>{img2.style.display='block';fb2.style.display='none';};
             img2.onerror=()=>{img2.style.display='none';fb2.style.display='flex';};
-            img2.src='assets/dealer.jpg'; }
+            img2.src=DEALER_SRC; }
 })();
 
 /* ============================================================
@@ -648,6 +715,8 @@ let players=[
   {name:'Полина', human:false, chips:START},
   {name:'Ваня', human:false, chips:START},
 ];
+// в теме ?1 — другие имена ботов
+if(new URLSearchParams(location.search).has('1')){ players[1].name='Тагир'; players[2].name='Руслан'; }
 let deck=[], community=[], shown=0, pot=0, probs={}, handLive=false;
 let button=-1;                       // позиция дилерской кнопки
 let streetPrevOrder=null;            // порядок старшинства на прошлой улице (для лога)
