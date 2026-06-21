@@ -333,6 +333,35 @@
   .calc-note{font-size:11px;color:var(--muted);margin-top:12px;line-height:1.45}
   #calcRank .rank-row{cursor:default}
 
+  /* ===== произвольная ставка / олл-ин ===== */
+  .act-main{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .raise-ctl{margin-top:12px;display:flex;flex-direction:column;gap:8px;align-items:center;
+    background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:14px;padding:12px 14px;max-width:520px;
+    margin-left:auto;margin-right:auto}
+  .raise-line{display:flex;gap:10px;align-items:center;width:100%}
+  .raise-line input[type=range]{flex:1;accent-color:var(--amber);height:6px}
+  .raise-line input[type=number]{width:96px;background:#0c1316;color:var(--ink);border:1px solid var(--line);
+    border-radius:8px;padding:8px;font-family:inherit;font-weight:800;font-size:15px;text-align:center}
+  .raise-presets{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+  .raise-presets button{cursor:pointer;font-family:inherit;font-size:12px;font-weight:700;color:var(--ink);
+    background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:8px;padding:6px 11px}
+  .raise-presets button:hover{background:rgba(255,255,255,.1);border-color:var(--amber)}
+  .raise-ctl .btn-raise{min-width:170px}
+
+  /* ===== онлайн p2p ===== */
+  .disclaimer{margin-top:18px;background:rgba(255,93,108,.08);border:1px solid rgba(255,93,108,.35);
+    border-radius:14px;padding:14px 16px;font-size:13px;line-height:1.5;color:#ffd0d5}
+  .disclaimer b{color:#ff8b96}
+  .online-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:20px}
+  @media(max-width:760px){.online-grid{grid-template-columns:1fr}}
+  .online-grid h3{font-size:15px}
+  .sig-lbl{display:block;font-size:12px;color:var(--muted);margin:12px 0 5px}
+  textarea.sig{width:100%;height:74px;resize:vertical;background:#0a1013;color:#bfe;border:1px solid var(--line);
+    border-radius:10px;padding:9px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;line-height:1.35;word-break:break-all}
+  .btn.mini{padding:9px 16px;font-size:13px;margin-top:8px}
+  .net-status{margin-top:16px;font-size:13px;color:var(--neon);background:rgba(25,227,177,.07);
+    border:1px solid rgba(25,227,177,.2);border-radius:10px;padding:10px 14px}
+
   /* ============================================================
      ТЕМА ?1 — тёплая (фото table.jpg + дилер ars.jpg)
   ============================================================ */
@@ -418,6 +447,7 @@
       <div class="hero-cta">
         <button class="btn btn-primary" onclick="document.getElementById('game').scrollIntoView({behavior:'smooth'})">Сыграть партию</button>
         <button class="btn btn-ghost" onclick="document.getElementById('rules').scrollIntoView({behavior:'smooth'})">Как это работает</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('online').scrollIntoView({behavior:'smooth'})">Игра по сети</button>
         <button class="btn btn-ghost" onclick="document.getElementById('calc').scrollIntoView({behavior:'smooth'})">Калькулятор стола</button>
       </div>
     </div>
@@ -524,6 +554,52 @@
         </div>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- ================= ONLINE P2P ================= -->
+<section class="block scroll-target" id="online">
+  <div class="wrap">
+    <div class="eyebrow">игра с другом · p2p</div>
+    <h2 style="font-size:28px">Сыграть вдвоём по сети</h2>
+    <p style="color:var(--muted);margin-top:-2px;max-width:720px">
+      Без сервера — браузеры соединяются напрямую через WebRTC. Один создаёт игру и становится
+      дилером, второй подключается. Обмен кодом — вручную (через любой мессенджер).</p>
+
+    <div class="disclaimer">
+      ⚠️ <b>Только для ознакомления, не безопасно.</b> Браузер хоста ведёт всю раздачу и технически
+      «видит» карты соперника — играйте лишь с теми, кому доверяете, и никогда на реальные деньги.
+    </div>
+
+    <div class="online-grid">
+      <!-- HOST -->
+      <div class="panel">
+        <h3>🎲 Создать игру (хост / дилер)</h3>
+        <button class="btn btn-primary" style="margin:8px 0" onclick="hostCreate()">Создать приглашение</button>
+        <div id="hostStep2" style="display:none">
+          <label class="sig-lbl">1. Ваш код-приглашение (отправьте другу):</label>
+          <textarea id="netOfferOut" class="sig" readonly onclick="this.select()"></textarea>
+          <button class="btn btn-ghost mini" onclick="copyField('netOfferOut')">Копировать</button>
+          <label class="sig-lbl">2. Вставьте ответный код друга:</label>
+          <textarea id="netAnswerIn" class="sig" placeholder="код-ответ от друга…"></textarea>
+          <button class="btn btn-primary mini" onclick="hostAccept()">Подключиться</button>
+        </div>
+      </div>
+
+      <!-- GUEST -->
+      <div class="panel">
+        <h3>🔗 Присоединиться (гость)</h3>
+        <label class="sig-lbl">1. Вставьте код-приглашение хоста:</label>
+        <textarea id="netOfferIn" class="sig" placeholder="код-приглашение от хоста…"></textarea>
+        <button class="btn btn-primary mini" onclick="guestJoin()">Сгенерировать ответ</button>
+        <div id="guestStep2" style="display:none">
+          <label class="sig-lbl">2. Ваш ответный код (отправьте хосту):</label>
+          <textarea id="netAnswerOut" class="sig" readonly onclick="this.select()"></textarea>
+          <button class="btn btn-ghost mini" onclick="copyField('netAnswerOut')">Копировать</button>
+        </div>
+      </div>
+    </div>
+    <div id="netStatus" class="net-status">Статус: не подключено. Игра идёт в столе выше ↑</div>
   </div>
 </section>
 
@@ -721,8 +797,14 @@ let deck=[], community=[], shown=0, pot=0, probs={}, handLive=false;
 let button=-1;                       // позиция дилерской кнопки
 let streetPrevOrder=null;            // порядок старшинства на прошлой улице (для лога)
 
+// ===== P2P (WebRTC, host-dealer) =====
+const NET={role:null, pc:null, ch:null};
+const GUEST_INDEX=1;                 // гость — это players[1] в массиве хоста
+let netRemoteResolver=null;          // host: ждём действие гостя
+let guestPrompted=false;             // guest: показана ли панель действий
+
 const $=id=>document.getElementById(id);
-function log(msg,cls=''){const l=$('log');const d=document.createElement('div');if(cls)d.className=cls;d.innerHTML=msg;l.appendChild(d);l.scrollTop=l.scrollHeight;}
+function log(msg,cls=''){const l=$('log');const d=document.createElement('div');if(cls)d.className=cls;d.innerHTML=msg;l.appendChild(d);l.scrollTop=l.scrollHeight;if(NET.role==='host')netSendState();}
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
 // карта текстом с цветом масти (для лога)
@@ -781,8 +863,8 @@ const inHand=()=>players.filter(p=>!p.folded);
 ============================================================ */
 function cardHTML(c,opts={}){
   const sm=opts.small?'small':'';
-  if(!c) return `<div class="card placeholder ${sm}"></div>`;
   if(opts.back) return `<div class="card back ${sm}" ${opts.noAnim?'style="animation:none"':''}></div>`;
+  if(!c) return `<div class="card placeholder ${sm}"></div>`;
   const red=RED.includes(c.s)?'red':'';
   let st='';
   if(opts.noAnim) st='style="animation:none"';
@@ -797,12 +879,12 @@ function betChip(p){
   return `<span class="bet-chip ${blind}">${p.roundBet}</span>`;
 }
 
-let prevShown=0, holeAnimated=false;
+let prevShown=0, holeAnimated=false, viewIndex=0;
 function render(){
-  // боты сверху (вскрытые карты не переанимируем)
-  $('seatsTop').innerHTML=players.map((p,idx)=>({p,idx})).slice(1).map(({p,idx})=>{
+  // соперники сверху (своё место — снизу). Вскрытые карты не переанимируем
+  $('seatsTop').innerHTML=players.map((p,idx)=>({p,idx})).filter(o=>o.idx!==viewIndex).map(({p,idx})=>{
     const cards = p.out?'' :
-      (p.revealHole? p.hole.map(c=>cardHTML(c,{small:true,noAnim:true})).join('')
+      (p.revealHole? (p.hole||[]).map(c=>cardHTML(c,{small:true,noAnim:true})).join('')
                    : (p.folded?'':cardHTML(null,{back:true,small:true,noAnim:true}).repeat(2)));
     const dbtn = idx===button?'<span class="dealer-btn">D</span>':'';
     return `<div class="seat ${p.folded?'folded':''} ${p.acting?'acting':''}">
@@ -825,7 +907,7 @@ function render(){
   $('community').innerHTML=com.join('');
   prevShown=shown;
   // ваши карты — раздаются по очереди один раз
-  const you=players[0];
+  const you=players[viewIndex];
   if(you.hole&&you.hole.length){
     const animate=!holeAnimated;
     $('yourCards').innerHTML=you.hole.map((c,idx)=>cardHTML(c, animate?{delay:idx*0.22}:{noAnim:true})).join('');
@@ -833,11 +915,12 @@ function render(){
   } else $('yourCards').innerHTML=cardHTML(null).repeat(2);
   $('youBet').innerHTML=betChip(you);
   $('seatYou').className='seat-you'+(you.acting?' acting':'')+(you.folded?' folded':'');
-  const youD = button===0?'<span class="dealer-btn">D</span> ':'';
+  const youD = button===viewIndex?'<span class="dealer-btn">D</span> ':'';
   $('youNameRow').innerHTML=youD+'Вы · <span style="color:var(--gold)">'+you.chips+' фишек</span>'+(you.actTxt?' · <span style="color:var(--amber)">'+you.actTxt+'</span>':'');
   $('potVal').textContent=pot;
   $('youStack').textContent=you.chips;
   renderRanking();
+  if(NET.role==='host') netSendState();   // зеркалим состояние гостю
 }
 
 let lastRankSig=null, lastRankOrder=null, lastMyEff=null;
@@ -847,7 +930,7 @@ function renderRanking(){
     el.innerHTML='<div style="color:var(--muted);font-size:13px">Рейтинг появится, когда выйдет флоп.</div>';
     lastRankSig=null;lastRankOrder=null;lastMyEff=null;return;
   }
-  const you=players[0];
+  const you=players[viewIndex];
   const myEff=(you.hole&&you.hole.length&&!you.folded&&shown>=3)?effective(you.hole,community.slice(0,shown),probs).key:null;
   const order=CATS.slice().sort((a,b)=> probs[a.key]-probs[b.key] || b.order-a.order);
   const sig=order.map(c=>c.key).join(',');
@@ -899,29 +982,87 @@ function showRankToast(){
 /* ============================================================
    СТАВКИ
 ============================================================ */
-let humanResolver=null;
+let humanResolver=null, minRaiseInc=BB, RAISE_CTL=null;
 function setActions(html){$('actions').innerHTML=html;}
 function hint(t){$('hint').textContent=t;}
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+// общие параметры хода (используются и локально, и для подсказки удалённому игроку)
+function turnOptions(p,currentBet){
+  const toCall=Math.max(0,currentBet-p.roundBet);
+  const callAmount=Math.min(toCall,p.chips);
+  const canCheck=toCall===0;
+  const maxTarget=p.roundBet+p.chips;                       // ва-банк
+  let minTarget=currentBet>0?currentBet+minRaiseInc:BB;
+  if(minTarget>maxTarget) minTarget=maxTarget;              // короткий олл-ин
+  const canRaise=p.chips>toCall && maxTarget>currentBet;
+  const betType=currentBet>0?'raise':'bet';
+  return {toCall,callAmount,canCheck,minTarget,maxTarget,canRaise,betType,currentBet};
+}
+
+// единый рендер панели действий со слайдером произвольной ставки / олл-ина
+function renderActionBar(o){
+  RAISE_CTL=o;
+  let raiseHtml='';
+  if(o.canRaise){
+    const def=o.minTarget, span=o.maxTarget>o.minTarget;
+    raiseHtml=`<div class="raise-ctl">
+      <div class="raise-line">
+        <input type="range" id="raiseRange" min="${o.minTarget}" max="${o.maxTarget}" value="${def}" step="${SB}" ${span?'':'disabled'} oninput="syncRaise(false)">
+        <input type="number" id="raiseNum" min="${o.minTarget}" max="${o.maxTarget}" value="${def}" oninput="syncRaise(true)">
+      </div>
+      <div class="raise-presets">
+        <button type="button" onclick="setRaise('min')">мин</button>
+        <button type="button" onclick="setRaise('half')">½ банка</button>
+        <button type="button" onclick="setRaise('pot')">банк</button>
+        <button type="button" onclick="setRaise('allin')">ва-банк</button>
+      </div>
+      <button class="btn btn-raise" id="raiseConfirm" onclick="confirmRaise()">${o.betType==='bet'?'Бет':'Рейз до'} ${def}</button>
+    </div>`;
+  }
+  setActions(`
+    <div class="act-main">
+      <button class="btn btn-fold" onclick="act('fold')">Фолд</button>
+      <button class="btn btn-call" onclick="act('${o.canCheck?'check':'call'}')">${o.canCheck?'Чек':'Колл '+o.callAmount}</button>
+    </div>${raiseHtml}`);
+}
+window.syncRaise=function(fromNum){
+  const r=$('raiseRange'),n=$('raiseNum'),c=$('raiseConfirm'); if(!c)return;
+  let v=clamp(parseInt((fromNum?n:r).value)||RAISE_CTL.minTarget,RAISE_CTL.minTarget,RAISE_CTL.maxTarget);
+  if(r)r.value=v; if(n)n.value=v;
+  c.textContent=(v>=RAISE_CTL.maxTarget?'Ва-банк ':(RAISE_CTL.betType==='bet'?'Бет ':'Рейз до '))+v;
+};
+window.setRaise=function(kind){
+  const o=RAISE_CTL; let v=o.minTarget;
+  if(kind==='allin') v=o.maxTarget;
+  else if(kind==='half') v=o.currentBet+Math.round(pot*0.5);
+  else if(kind==='pot') v=o.currentBet+pot;
+  v=clamp(v,o.minTarget,o.maxTarget);
+  if($('raiseRange'))$('raiseRange').value=v; if($('raiseNum'))$('raiseNum').value=v;
+  syncRaise(false);
+};
+window.confirmRaise=function(){
+  const v=clamp(parseInt($('raiseNum').value)||RAISE_CTL.minTarget,RAISE_CTL.minTarget,RAISE_CTL.maxTarget);
+  act(RAISE_CTL.betType,v);
+};
 
 function humanTurn(currentBet){
-  const p=players[0];
-  const toCall=currentBet-p.roundBet;
-  const canCheck=toCall===0;
-  const raiseTarget=Math.min(currentBet+RAISE, p.roundBet+p.chips);
-  const raiseCost=raiseTarget-p.roundBet;
-  const canRaise=p.chips>toCall && raiseCost>toCall;
+  const o=turnOptions(players[viewIndex],currentBet);
   return new Promise(res=>{
     humanResolver=res;
-    const callLabel=canCheck?'Чек':('Колл '+Math.min(toCall,p.chips));
-    setActions(`
-      <button class="btn btn-fold" onclick="act('fold')">Фолд</button>
-      <button class="btn btn-call" onclick="act('${canCheck?'check':'call'}')">${callLabel}</button>
-      <button class="btn btn-raise" onclick="act('${currentBet===0?'bet':'raise'}',${raiseTarget})" ${canRaise?'':'disabled'}>
-        ${currentBet===0?'Бет '+raiseTarget:'Рейз до '+raiseTarget}</button>`);
-    hint(canCheck?'Ваш ход: можно чекнуть или поставить.':'Ваш ход: до колла '+Math.min(toCall,p.chips)+' фишек.');
+    renderActionBar(o);
+    hint(o.canCheck?'Ваш ход: чек или ставка.':'Ваш ход: до колла '+o.callAmount+' фишек.');
   });
 }
+// act: локально — резолвит движок; у гостя — отправляет действие хосту по сети
 window.act=function(type,amount){
+  if(NET.role==='guest'){
+    if(!guestPrompted)return;
+    guestPrompted=false;
+    netSend({t:'action',a:{type,amount}});
+    setActions('');hint('Ход отправлен. Ждём соперника…');
+    return;
+  }
   if(!humanResolver)return;
   const r=humanResolver;humanResolver=null;
   setActions('');hint('');
@@ -943,14 +1084,17 @@ function aiDecision(p,currentBet){
   const preflop = shown<3 || !Object.keys(probs).length;
   const strength = preflop ? preflopStrength(p.hole)
                            : 1-effective(p.hole,community.slice(0,shown),probs).prob;
-  const toCall=currentBet-p.roundBet;
+  const o=turnOptions(p,currentBet);
   const r=Math.random();
-  if(toCall===0){
-    if(strength>0.55 && r<0.7) return {type:'bet',amount:currentBet+RAISE};
-    if(r<0.08) return {type:'bet',amount:currentBet+RAISE};      // блеф
+  const allIn={type:o.betType,amount:o.maxTarget};
+  const raiseBy=k=>({type:o.betType,amount:clamp(currentBet+k,o.minTarget,o.maxTarget)});
+  if(o.canRaise && strength>0.92 && r<0.35) return allIn;        // монстр — иногда ва-банк
+  if(o.toCall===0){
+    if(strength>0.55 && r<0.7) return o.canRaise?raiseBy(RAISE):{type:'check'};
+    if(r<0.08 && o.canRaise) return raiseBy(RAISE);              // блеф
     return {type:'check'};
   }
-  if(strength>0.75){ if(r<0.45 && p.chips>toCall+RAISE) return {type:'raise',amount:currentBet+RAISE}; return {type:'call'}; }
+  if(strength>0.75){ if(r<0.45 && o.canRaise) return raiseBy(RAISE); return {type:'call'}; }
   if(strength>0.45) return r<0.85?{type:'call'}:{type:'fold'};
   if(strength>0.30) return r<0.40?{type:'call'}:{type:'fold'};
   return r<0.10?{type:'call'}:{type:'fold'};
@@ -964,22 +1108,26 @@ async function bettingRound(startIdx, opts={}){
   if(!preflop) players.forEach(p=>{p.roundBet=0; if(!p.folded&&!p.out) p.actTxt='';});
   players.forEach(p=>{p.needAct=!p.folded&&!p.allIn&&!p.out;});
   let currentBet=opts.currentBet||0;
+  minRaiseInc=BB;
   let i=startIdx, safety=0;
-  while(players.some(p=>p.needAct)&&safety++<80){
+  while(players.some(p=>p.needAct)&&safety++<120){
     const p=players[i];
     if(p.needAct){
       players.forEach(q=>q.acting=false); p.acting=true;
       let dec;
-      if(p.human){ render(); dec=await humanTurn(currentBet); }
+      if(p.remote){ render(); hint('Ход соперника…'); dec=await remoteTurn(p,currentBet); }
+      else if(p.human){ render(); dec=await humanTurn(currentBet); }
       else{ p.thinking=true;render();await sleep(650+Math.random()*550);p.thinking=false; dec=aiDecision(p,currentBet); }
 
+      const prevBet=currentBet;
       if(dec.type==='fold'){p.folded=true;p.needAct=false;p.actTxt='фолд';}
       else if(dec.type==='check'){p.needAct=false;p.actTxt='чек';}
-      else if(dec.type==='call'){const pay=currentBet-p.roundBet;commit(p,pay);p.needAct=false;p.actTxt='колл '+pay;}
-      else{ // bet / raise
+      else if(dec.type==='call'){const pay=Math.min(currentBet-p.roundBet,p.chips);commit(p,pay);p.needAct=false;p.actTxt='колл '+pay+(p.chips===0?' (ва-банк)':'');}
+      else{ // bet / raise / all-in
         const target=Math.min(dec.amount,p.roundBet+p.chips);
         commit(p,target-p.roundBet);currentBet=p.roundBet;p.needAct=false;
-        p.actTxt=(dec.type==='bet'?'бет ':'рейз до ')+currentBet;
+        minRaiseInc=Math.max(BB,currentBet-prevBet);
+        p.actTxt=(dec.type==='bet'?'бет ':'рейз до ')+currentBet+(p.chips===0?' (ва-банк)':'');
         players.forEach(q=>{if(q!==p&&!q.folded&&!q.allIn&&!q.out)q.needAct=true;});
       }
       p.acting=false;
@@ -1108,6 +1256,124 @@ function resetMatch(){
   render();
   setActions(`<button class="btn btn-primary" id="startBtn" onclick="playHand()">Раздать карты</button>`);
   hint('Матч сброшен. Поехали!');
+}
+
+/* ============================================================
+   P2P ОНЛАЙН (WebRTC, ручной обмен кодом, модель «хост-дилер»)
+============================================================ */
+const encodeSig=d=>btoa(unescape(encodeURIComponent(JSON.stringify({type:d.type,sdp:d.sdp}))));
+const decodeSig=s=>JSON.parse(decodeURIComponent(escape(atob(s.trim()))));
+function netStatus(t){const el=$('netStatus'); if(el)el.textContent=t;}
+function netSend(obj){ if(NET.ch&&NET.ch.readyState==='open') NET.ch.send(JSON.stringify(obj)); }
+
+// снимок состояния для гостя (карты соперника скрыты до вскрытия)
+function netSendState(){
+  if(!(NET.ch&&NET.ch.readyState==='open'))return;
+  const snap={
+    t:'state',
+    viewIndex:GUEST_INDEX,
+    players:players.map((p,i)=>({
+      name:p.name,chips:p.chips,folded:!!p.folded,out:!!p.out,allIn:!!p.allIn,
+      roundBet:p.roundBet||0,actTxt:p.actTxt||'',acting:!!p.acting,revealHole:!!p.revealHole,
+      hole:(i===GUEST_INDEX||p.revealHole)?(p.hole||[]):[]
+    })),
+    community:community.slice(0,shown),
+    shown,pot,button,probs,
+    logHtml:$('log').innerHTML
+  };
+  netSend(snap);
+}
+// host: ждём действие удалённого игрока
+function remoteTurn(p,currentBet){
+  const o=turnOptions(p,currentBet);
+  return new Promise(res=>{ netRemoteResolver=res; netSend({t:'prompt',o}); });
+}
+
+// приём сообщений
+function onNetMessage(m){
+  if(NET.role==='host'){
+    if(m.t==='action' && netRemoteResolver){ const r=netRemoteResolver; netRemoteResolver=null; r(m.a); }
+    return;
+  }
+  // гость
+  if(m.t==='state') applyGuestState(m);
+  else if(m.t==='prompt'){ guestPrompted=true; renderActionBar(m.o); hint('🟢 Ваш ход!'); }
+}
+function applyGuestState(s){
+  players=s.players.map(p=>({...p,hole:p.hole||[]}));
+  community=s.community||[]; shown=s.shown||0; pot=s.pot||0; button=s.button; probs=s.probs||{};
+  viewIndex=s.viewIndex!=null?s.viewIndex:GUEST_INDEX;
+  $('log').innerHTML=s.logHtml||''; $('log').scrollTop=1e9;
+  render();
+  if(!guestPrompted){ setActions(''); hint('Ход соперника / раздаёт хост…'); }
+}
+
+function makePC(){
+  const pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
+  pc.onconnectionstatechange=()=>{ if(['failed','disconnected','closed'].includes(pc.connectionState)) netStatus('Соединение потеряно ('+pc.connectionState+').'); };
+  NET.pc=pc; return pc;
+}
+function waitIce(pc){return new Promise(res=>{
+  if(pc.iceGatheringState==='complete')return res();
+  const done=()=>{pc.removeEventListener('icegatheringstatechange',chk);res();};
+  const chk=()=>{ if(pc.iceGatheringState==='complete')done(); };
+  pc.addEventListener('icegatheringstatechange',chk);
+  setTimeout(done,2500); // фолбэк, если сбор кандидатов затянулся
+});}
+function netSetupChannel(ch){
+  NET.ch=ch;
+  ch.onopen=onNetOpen;
+  ch.onmessage=e=>{ try{onNetMessage(JSON.parse(e.data));}catch(err){console.error(err);} };
+  ch.onclose=()=>netStatus('Канал закрыт.');
+}
+function onNetOpen(){
+  netStatus('🟢 Соединение установлено!');
+  document.getElementById('game').scrollIntoView({behavior:'smooth'});
+  if(NET.role==='host') startOnlineGame();
+  else { viewIndex=GUEST_INDEX; setActions(''); hint('Подключено. Ждём раздачу от хоста…'); }
+}
+
+window.hostCreate=async function(){
+  try{
+    NET.role='host';
+    const pc=makePC();
+    netSetupChannel(pc.createDataChannel('game'));
+    await pc.setLocalDescription(await pc.createOffer());
+    await waitIce(pc);
+    $('netOfferOut').value=encodeSig(pc.localDescription);
+    $('hostStep2').style.display='block';
+    netStatus('1) Скопируйте код-приглашение и отправьте другу. 2) Вставьте его ответный код ниже.');
+  }catch(e){ netStatus('Ошибка: '+e.message); NET.role=null; }
+};
+window.hostAccept=async function(){
+  try{ await NET.pc.setRemoteDescription(decodeSig($('netAnswerIn').value)); netStatus('Подключаемся…'); }
+  catch(e){ netStatus('Не удалось разобрать ответный код: '+e.message); }
+};
+window.guestJoin=async function(){
+  try{
+    NET.role='guest';
+    const pc=makePC();
+    pc.ondatachannel=e=>netSetupChannel(e.channel);
+    await pc.setRemoteDescription(decodeSig($('netOfferIn').value));
+    await pc.setLocalDescription(await pc.createAnswer());
+    await waitIce(pc);
+    $('netAnswerOut').value=encodeSig(pc.localDescription);
+    $('guestStep2').style.display='block';
+    netStatus('Скопируйте ответный код и отправьте хосту. Ждём соединения…');
+  }catch(e){ netStatus('Ошибка: '+e.message); NET.role=null; }
+};
+window.copyField=function(id){ const el=$(id); el.select(); document.execCommand&&document.execCommand('copy');
+  try{navigator.clipboard&&navigator.clipboard.writeText(el.value);}catch(e){} };
+
+function startOnlineGame(){
+  players=[
+    {name:'Хост', human:true, chips:START},
+    {name:'Друг', human:true, remote:true, chips:START}
+  ];
+  button=-1; viewIndex=0;
+  $('log').innerHTML='';
+  log('🌐 Онлайн-игра началась. Вы — дилер (хост).');
+  playHand();
 }
 
 /* ============================================================
