@@ -45,18 +45,69 @@
     animation:drift 22s ease-in-out infinite alternate;}
   @keyframes drift{from{transform:translateY(0)}to{transform:translateY(-30px)}}
 
-  /* ===== HERO ===== */
-  .hero{position:relative;z-index:1;padding:70px 0 40px;text-align:center}
-  .hero .badge{display:inline-block;font-size:12px;letter-spacing:.32em;text-transform:uppercase;
-    color:var(--amber);border:1px solid rgba(255,157,60,.35);border-radius:40px;padding:7px 16px;margin-bottom:24px;
-    background:rgba(255,157,60,.06)}
-  .logo{font-size:clamp(52px,11vw,128px);font-weight:900;line-height:.9;letter-spacing:-.03em;
-    background:linear-gradient(180deg,#eafff8,var(--neon) 60%,var(--neon-dim));
-    -webkit-background-clip:text;background-clip:text;color:transparent;
-    text-shadow:0 0 60px rgba(25,227,177,.25);margin:0}
-  .logo span{color:var(--amber);-webkit-text-fill-color:var(--amber);text-shadow:0 0 50px rgba(255,123,0,.5)}
-  .tagline{color:var(--muted);font-size:clamp(15px,2.4vw,21px);margin:18px auto 0;max-width:620px}
-  .hero-cta{margin-top:34px;display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+  /* ===== HERO (full-bleed video + blended portrait) ===== */
+  .hero{position:relative;z-index:1;min-height:100vh;display:flex;align-items:center;overflow:hidden;
+    padding:90px 0 60px}
+  /* atmospheric video background */
+  .hero-bg{position:absolute;inset:0;z-index:0}
+  .hero-bg video{width:100%;height:100%;object-fit:cover;filter:saturate(1.15) contrast(1.05)}
+  .hero-bg .grade{position:absolute;inset:0;
+    background:
+      linear-gradient(90deg, rgba(5,8,9,.96) 0%, rgba(5,8,9,.72) 38%, rgba(5,8,9,.25) 70%, rgba(7,14,12,.55) 100%),
+      radial-gradient(80% 90% at 18% 50%, rgba(7,18,15,.55), transparent 70%),
+      radial-gradient(120% 120% at 85% 20%, rgba(25,227,177,.10), transparent 55%);
+    mix-blend-mode:normal}
+  .hero-bg .vign{position:absolute;inset:0;box-shadow:inset 0 0 220px 60px #000;pointer-events:none}
+  .hero-bg .scan{position:absolute;inset:0;opacity:.25;pointer-events:none;
+    background:repeating-linear-gradient(0deg,rgba(0,0,0,.0) 0 2px,rgba(0,0,0,.25) 3px)}
+
+  /* dealer portrait, duotone, bleeding off the right edge */
+  .hero-portrait{position:absolute;right:-2%;bottom:-4%;top:0;width:54%;z-index:1;pointer-events:none;
+    display:flex;align-items:flex-end;justify-content:flex-end}
+  .hero-portrait img{height:104%;width:auto;object-fit:contain;object-position:bottom right;
+    filter:grayscale(1) contrast(1.12) brightness(.92);
+    -webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 42%,#000 100%),
+                       linear-gradient(0deg,transparent 0%,#000 16%);
+    -webkit-mask-composite:source-in;mask-composite:intersect;
+    mask-image:linear-gradient(90deg,transparent 0%,#000 42%,#000 100%),
+               linear-gradient(0deg,transparent 0%,#000 16%);
+    mix-blend-mode:luminosity;opacity:.85}
+  .hero-portrait::after{content:"";position:absolute;inset:0;
+    background:radial-gradient(60% 50% at 70% 45%, rgba(25,227,177,.16), transparent 70%);
+    mix-blend-mode:screen}
+  @media(max-width:820px){
+    .hero{min-height:auto;padding:120px 0 50px}
+    .hero-portrait{width:100%;right:-10%;opacity:.5}
+    .hero-portrait img{height:80%}
+  }
+
+  .hero-content{position:relative;z-index:2;max-width:680px}
+  .hero .kicker{display:inline-flex;align-items:center;gap:10px;font-size:11px;letter-spacing:.34em;
+    text-transform:uppercase;color:var(--amber);margin-bottom:22px}
+  .hero .kicker::before{content:"";width:34px;height:1px;background:linear-gradient(90deg,var(--amber),transparent)}
+
+  .logo{font-size:clamp(64px,15vw,180px);font-weight:900;line-height:.82;letter-spacing:-.04em;margin:0;
+    color:#f2fff9;text-shadow:0 0 70px rgba(25,227,177,.35);
+    transform:translateX(-4px)}
+  .logo .o{color:var(--amber);text-shadow:0 0 60px rgba(255,123,0,.6)}
+
+  /* explicit decoding: Ч(естный) ПОКЕР */
+  .decode{margin:18px 0 6px;font-size:clamp(18px,3.4vw,30px);font-weight:800;letter-spacing:.02em;
+    display:flex;flex-wrap:wrap;align-items:baseline;gap:.5ch}
+  .decode .lit{color:var(--neon);position:relative}
+  .decode .lit::after{content:"";position:absolute;left:0;right:0;bottom:-4px;height:3px;border-radius:3px;
+    background:var(--neon);box-shadow:0 0 14px var(--neon);animation:underpulse 2.4s ease-in-out infinite}
+  @keyframes underpulse{0%,100%{opacity:.5}50%{opacity:1}}
+  .decode .dim{color:#5d6f68;font-weight:600}
+  .decode-note{font-size:13px;color:var(--muted);letter-spacing:.04em;margin-bottom:6px}
+  .decode-note b{color:var(--neon)}
+
+  .tagline{color:#c7d6cf;font-size:clamp(15px,2.2vw,20px);margin:14px 0 0;max-width:520px;line-height:1.5}
+  .hero-cta{margin-top:32px;display:flex;gap:14px;flex-wrap:wrap}
+  .scroll-cue{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);z-index:2;
+    color:var(--muted);font-size:11px;letter-spacing:.3em;text-transform:uppercase;animation:bob 2s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateX(-50%) translateY(0);opacity:.5}50%{transform:translateX(-50%) translateY(6px);opacity:1}}
+  @media(max-width:820px){.scroll-cue{display:none}}
 
   .btn{cursor:pointer;border:none;border-radius:12px;font-weight:700;font-size:15px;padding:14px 26px;
     transition:.15s transform,.15s box-shadow,.15s background;font-family:inherit}
@@ -64,23 +115,9 @@
   .btn-primary{background:linear-gradient(180deg,var(--neon),var(--neon-dim));color:#03130e;
     box-shadow:0 0 0 1px rgba(25,227,177,.5),0 14px 40px -12px rgba(25,227,177,.7)}
   .btn-primary:hover{box-shadow:0 0 0 1px rgba(25,227,177,.8),0 18px 50px -10px rgba(25,227,177,.9)}
-  .btn-ghost{background:rgba(255,255,255,.04);color:var(--ink);border:1px solid var(--line)}
-  .btn-ghost:hover{background:rgba(255,255,255,.08)}
-
-  /* ===== media row ===== */
-  .media{position:relative;z-index:1;margin:46px auto 0;max-width:920px;display:grid;
-    grid-template-columns:1.6fr 1fr;gap:18px}
-  @media(max-width:760px){.media{grid-template-columns:1fr}}
-  .frame{position:relative;border-radius:18px;overflow:hidden;border:1px solid var(--line);
-    background:linear-gradient(135deg,#0b1316,#0a0d0f);min-height:200px}
-  .frame video,.frame img{display:block;width:100%;height:100%;object-fit:cover}
-  .frame .fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-    flex-direction:column;gap:8px;color:var(--muted);font-size:13px;text-align:center;padding:20px;
-    background:
-      radial-gradient(300px 160px at 50% 0%, rgba(25,227,177,.12), transparent 70%),
-      repeating-linear-gradient(0deg,#0b1316,#0b1316 2px,#0e171a 3px,#0b1316 4px)}
-  .frame .cap{position:absolute;left:0;right:0;bottom:0;padding:10px 14px;font-size:12px;
-    background:linear-gradient(0deg,rgba(0,0,0,.75),transparent);color:#cfe;letter-spacing:.04em}
+  .btn-ghost{background:rgba(255,255,255,.05);color:var(--ink);border:1px solid rgba(255,255,255,.18);
+    backdrop-filter:blur(4px)}
+  .btn-ghost:hover{background:rgba(255,255,255,.12)}
 
   /* ===== sections ===== */
   section.block{position:relative;z-index:1;padding:64px 0}
@@ -176,21 +213,41 @@
 
   /* side: dynamic ranking */
   .side{display:flex;flex-direction:column;gap:16px}
-  .panel{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.012));
+  .panel{position:relative;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.012));
     border:1px solid var(--line);border-radius:16px;padding:16px}
   .panel h3{font-size:14px;letter-spacing:.04em;display:flex;align-items:center;gap:8px}
   .panel .sub{color:var(--muted);font-size:12px;margin:-2px 0 12px}
-  .rank-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid rgba(255,255,255,.05)}
+  #rankList{overflow:hidden}
+  .rank-row{display:flex;align-items:center;gap:10px;padding:7px 6px;border-top:1px solid rgba(255,255,255,.05);
+    border-radius:8px;will-change:transform}
   .rank-row:first-of-type{border-top:none}
-  .rank-row .pos{width:20px;text-align:center;font-weight:800;color:var(--muted);font-size:12px}
+  .rank-row .pos{width:22px;text-align:center;font-weight:800;color:var(--muted);font-size:12px;transition:color .3s}
   .rank-row .lab{flex:1;font-size:13px}
   .rank-row .bar{flex:1.2;height:7px;border-radius:6px;background:rgba(255,255,255,.07);overflow:hidden}
-  .rank-row .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--neon),var(--neon-dim))}
+  .rank-row .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--neon),var(--neon-dim));
+    transition:width .5s ease}
   .rank-row .pct{width:46px;text-align:right;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
-  .rank-row.guaranteed{opacity:.4}
+  .rank-row.guaranteed{opacity:.42}
   .rank-row.guaranteed .lab::after{content:" · на столе";color:var(--amber);font-size:11px}
-  .rank-row.mine{background:rgba(25,227,177,.08);border-radius:8px;margin:0 -6px;padding-left:6px;padding-right:6px}
+  .rank-row.guaranteed .bar i{background:linear-gradient(90deg,#5a4a2a,#3a2f18)}
+  .rank-row.mine{background:rgba(25,227,177,.10)}
   .rank-row.mine .lab{color:var(--neon);font-weight:700}
+  .rank-row.mine .pos{color:var(--neon)}
+  /* вспышка строки, которая поднялась в старшинстве */
+  .rank-row.climbed{animation:climb 1.5s ease}
+  .rank-row.climbed .pos{color:var(--gold)}
+  @keyframes climb{
+    0%{background:rgba(25,227,177,.5);box-shadow:0 0 26px rgba(25,227,177,.6);transform:scale(1.04)}
+    60%{background:rgba(25,227,177,.18)}
+    100%{box-shadow:none}
+  }
+  .rank-toast{position:absolute;top:12px;right:14px;z-index:5;
+    background:linear-gradient(180deg,var(--amber),var(--amber-glow));color:#241000;
+    font-size:11px;font-weight:800;letter-spacing:.02em;padding:5px 11px;border-radius:20px;
+    opacity:0;transform:translateY(-6px);pointer-events:none;box-shadow:0 8px 24px -8px rgba(255,123,0,.8)}
+  .rank-toast.show{animation:toast 2.3s ease}
+  @keyframes toast{0%{opacity:0;transform:translateY(-6px) scale(.9)}
+    12%{opacity:1;transform:none}78%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-4px)}}
 
   .dealer-card{display:flex;gap:12px;align-items:center}
   .dealer-card .ph{width:58px;height:58px;border-radius:50%;object-fit:cover;border:2px solid var(--neon-dim);
@@ -213,35 +270,35 @@
 
 <!-- ================= HERO ================= -->
 <header class="hero">
-  <div class="wrap">
-    <div class="badge">честный&nbsp;покер</div>
-    <h1 class="logo">ЧП<span>OKER</span></h1>
-    <p class="tagline">Старшинство комбинаций больше не высечено в камне.
-      Оно живёт и меняется вместе с картами на столе.</p>
-    <div class="hero-cta">
-      <button class="btn btn-primary" onclick="document.getElementById('game').scrollIntoView({behavior:'smooth'})">Сыграть партию</button>
-      <button class="btn btn-ghost" onclick="document.getElementById('rules').scrollIntoView({behavior:'smooth'})">Как это работает</button>
-    </div>
+  <div class="hero-bg">
+    <video id="heroVideo" autoplay muted loop playsinline></video>
+    <div class="grade"></div>
+    <div class="scan"></div>
+    <div class="vign"></div>
+  </div>
+  <div class="hero-portrait"><img id="dealerImg" alt="Дилер" src="assets/dealer.jpg"></div>
 
-    <div class="media">
-      <div class="frame">
-        <video id="heroVideo" autoplay muted loop playsinline></video>
-        <div class="fallback" id="videoFallback">
-          <div style="font-size:30px">🎞️</div>
-          <div>Положите ваше видео в <b style="color:#cfe">assets/poker.mp4</b><br>и оно появится здесь</div>
-        </div>
-        <div class="cap">Тот самый прокуренный стол · мониторы вместо лиц</div>
+  <div class="wrap">
+    <div class="hero-content">
+      <div class="kicker">подпольный стол · честные правила</div>
+      <h1 class="logo">ЧП<span class="o">O</span>KER</h1>
+
+      <div class="decode">
+        <span class="lit">Ч</span><span class="dim">ЕСТНЫЙ</span>
+        <span class="lit">ПОКЕР</span>
       </div>
-      <div class="frame">
-        <img id="dealerImg" alt="Дилер" style="display:none">
-        <div class="fallback" id="dealerFallback">
-          <div style="font-size:30px">🃏</div>
-          <div>Фото дилера → <b style="color:#cfe">assets/dealer.jpg</b></div>
-        </div>
-        <div class="cap">Ваш дилер</div>
+      <div class="decode-note">«ЧПОКЕР» = <b>Ч</b>естный + <b>ПОКЕР</b>. Подсвеченные буквы и складываются в название.</div>
+
+      <p class="tagline">Старшинство комбинаций больше не высечено в камне —
+        оно живёт и переворачивается вместе с картами на столе.</p>
+
+      <div class="hero-cta">
+        <button class="btn btn-primary" onclick="document.getElementById('game').scrollIntoView({behavior:'smooth'})">Сыграть партию</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('rules').scrollIntoView({behavior:'smooth'})">Как это работает</button>
       </div>
     </div>
   </div>
+  <div class="scroll-cue">листайте вниз</div>
 </header>
 
 <!-- ================= STORY ================= -->
@@ -324,7 +381,8 @@
 
       <!-- SIDE PANELS -->
       <div class="side">
-        <div class="panel">
+        <div class="panel rank-panel">
+          <div id="rankToast" class="rank-toast">⚡ Старшинство изменилось</div>
           <h3>🔥 Старшинство сейчас</h3>
           <div class="sub">от самой редкой (сильной) к частой. % — доля столов, которые могут её собрать.</div>
           <div id="rankList">
@@ -351,21 +409,20 @@
    Загрузка пользовательских ассетов (видео/фото) с фолбэком
 ============================================================ */
 (function(){
-  const v=document.getElementById('heroVideo'), vf=document.getElementById('videoFallback');
+  // фоновое видео героя
+  const v=document.getElementById('heroVideo');
   const src=document.createElement('source'); src.src='assets/poker.mp4'; src.type='video/mp4'; v.appendChild(src);
-  v.addEventListener('error',()=>{v.style.display='none';vf.style.display='flex';});
-  v.addEventListener('loadeddata',()=>{vf.style.display='none';});
-  // если файла нет — error может не сработать в некоторых браузерах: проверим
-  setTimeout(()=>{ if(v.readyState===0){v.style.display='none';vf.style.display='flex';} },1500);
-
-  function tryImg(imgId,fbId){
-    const img=document.getElementById(imgId), fb=document.getElementById(fbId);
-    img.onload=()=>{img.style.display='block';fb.style.display='none';};
-    img.onerror=()=>{img.style.display='none';fb.style.display='flex';};
-    img.src='assets/dealer.jpg';
-  }
-  tryImg('dealerImg','dealerFallback');
-  tryImg('dealerImg2','dealerFallback2');
+  v.addEventListener('error',()=>{document.querySelector('.hero').style.background=
+    'radial-gradient(120% 90% at 20% 30%, #133a2f, #07090b 70%)';});
+  v.load();
+  // портрет дилера в герое — если файла нет, прячем мягко
+  const hp=document.getElementById('dealerImg');
+  if(hp) hp.onerror=()=>{hp.style.display='none';};
+  // маленький аватар дилера в игровой панели
+  const img2=document.getElementById('dealerImg2'), fb2=document.getElementById('dealerFallback2');
+  if(img2){ img2.onload=()=>{img2.style.display='block';fb2.style.display='none';};
+            img2.onerror=()=>{img2.style.display='none';fb2.style.display='flex';};
+            img2.src='assets/dealer.jpg'; }
 })();
 
 /* ============================================================
@@ -495,6 +552,7 @@ function resetHandState(){
   deck=fullDeck();
   for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
   community=[];shown=0;pot=0;probs={};
+  prevShown=0; holeAnimated=false; lastRankSig=null; lastRankOrder=null;
   players.forEach(p=>{
     p.folded=p.chips<=0; p.out=p.chips<=0; p.allIn=false;
     p.hole=[]; p.roundBet=0; p.totalBet=0; p.actTxt='';
@@ -506,18 +564,23 @@ const inHand=()=>players.filter(p=>!p.folded);
    РЕНДЕР
 ============================================================ */
 function cardHTML(c,opts={}){
-  if(!c) return `<div class="card placeholder ${opts.small?'small':''}"></div>`;
-  if(opts.back) return `<div class="card back ${opts.small?'small':''}"></div>`;
-  const red=RED.includes(c.s)?'red':'';
   const sm=opts.small?'small':'';
-  return `<div class="card ${red} ${sm}">${lab(c.r)}<span class="suit">${SUITS[c.s]}</span></div>`;
+  if(!c) return `<div class="card placeholder ${sm}"></div>`;
+  if(opts.back) return `<div class="card back ${sm}" ${opts.noAnim?'style="animation:none"':''}></div>`;
+  const red=RED.includes(c.s)?'red':'';
+  let st='';
+  if(opts.noAnim) st='style="animation:none"';
+  else if(opts.delay!=null) st=`style="animation-delay:${opts.delay}s"`;
+  return `<div class="card ${red} ${sm}" ${st}>${lab(c.r)}<span class="suit">${SUITS[c.s]}</span></div>`;
 }
+
+let prevShown=0, holeAnimated=false;
 function render(){
-  // боты сверху
+  // боты сверху (вскрытые карты не переанимируем)
   $('seatsTop').innerHTML=players.slice(1).map((p,i)=>{
     const cards = p.out?'' :
-      (p.revealHole? p.hole.map(c=>cardHTML(c,{small:true})).join('')
-                   : (p.folded?'':cardHTML(null,{back:true,small:true})+cardHTML(null,{back:true,small:true})));
+      (p.revealHole? p.hole.map(c=>cardHTML(c,{small:true,noAnim:true})).join('')
+                   : (p.folded?'':cardHTML(null,{back:true,small:true,noAnim:true}).repeat(2)));
     return `<div class="seat ${p.folded?'folded':''}">
       <div class="crt ${p.thinking?'think':''}"></div>
       <div class="mini-cards">${cards}</div>
@@ -526,36 +589,83 @@ function render(){
       <div class="act">${p.actTxt||''}</div>
     </div>`;
   }).join('');
-  // борд
+  // борд: только новые карты выкладываются по очереди
   const com=[];
-  for(let i=0;i<5;i++) com.push(i<shown?cardHTML(community[i]):cardHTML(null,{back:i<community.length}));
+  for(let i=0;i<5;i++){
+    if(i<shown){
+      const isNew=i>=prevShown;
+      com.push(cardHTML(community[i], isNew?{delay:(i-prevShown)*0.22}:{noAnim:true}));
+    } else com.push(cardHTML(null,{back:i<community.length,noAnim:true}));
+  }
   $('community').innerHTML=com.join('');
-  // ваши карты
+  prevShown=shown;
+  // ваши карты — раздаются по очереди один раз
   const you=players[0];
-  $('yourCards').innerHTML=(you.hole&&you.hole.length)?you.hole.map(c=>cardHTML(c)).join(''):cardHTML(null,{})+cardHTML(null,{});
+  if(you.hole&&you.hole.length){
+    const animate=!holeAnimated;
+    $('yourCards').innerHTML=you.hole.map((c,idx)=>cardHTML(c, animate?{delay:idx*0.22}:{noAnim:true})).join('');
+    holeAnimated=true;
+  } else $('yourCards').innerHTML=cardHTML(null).repeat(2);
   $('potVal').textContent=pot;
   $('youStack').textContent=you.chips;
   $('youStack2').textContent=you.chips+' фишек';
   renderRanking();
 }
 
+let lastRankSig=null, lastRankOrder=null, lastMyEff=null;
 function renderRanking(){
   const el=$('rankList');
-  if(!Object.keys(probs).length){el.innerHTML='<div style="color:var(--muted);font-size:13px">Рейтинг появится, когда выйдет флоп.</div>';return;}
+  if(!Object.keys(probs).length){
+    el.innerHTML='<div style="color:var(--muted);font-size:13px">Рейтинг появится, когда выйдет флоп.</div>';
+    lastRankSig=null;lastRankOrder=null;lastMyEff=null;return;
+  }
   const you=players[0];
   const myEff=(you.hole&&you.hole.length&&!you.folded&&shown>=3)?effective(you.hole,community.slice(0,shown),probs).key:null;
   const order=CATS.slice().sort((a,b)=> probs[a.key]-probs[b.key] || b.order-a.order);
+  const sig=order.map(c=>c.key).join(',');
+  // ничего не изменилось — не перерисовываем (иначе обрывается анимация перестановки)
+  if(sig===lastRankSig && myEff===lastMyEff && el.querySelector('.rank-row')) return;
+  const changed = lastRankSig!==null && sig!==lastRankSig;
+
+  // FLIP: запоминаем старые позиции строк
+  const oldPos={};
+  if(changed) el.querySelectorAll('.rank-row').forEach(r=>{oldPos[r.dataset.key]=r.getBoundingClientRect().top;});
+  const oldIndex={}; if(lastRankOrder) lastRankOrder.forEach((k,i)=>oldIndex[k]=i);
+
   el.innerHTML=order.map((c,i)=>{
     const p=probs[c.key], pct=Math.round(p*100);
     const guaranteed=p>0.999;
     const mine=c.key===myEff;
-    return `<div class="rank-row ${guaranteed?'guaranteed':''} ${mine?'mine':''}">
+    return `<div class="rank-row ${guaranteed?'guaranteed':''} ${mine?'mine':''}" data-key="${c.key}">
       <div class="pos">#${i+1}</div>
       <div class="lab">${c.label}</div>
       <div class="bar"><i style="width:${pct}%"></i></div>
       <div class="pct">${pct}%</div>
     </div>`;
   }).join('');
+
+  if(changed){
+    el.querySelectorAll('.rank-row').forEach((r,ni)=>{
+      const k=r.dataset.key;
+      if(oldPos[k]!=null){
+        const dy=oldPos[k]-r.getBoundingClientRect().top;
+        if(dy){
+          r.style.transition='none'; r.style.transform=`translateY(${dy}px)`;
+          requestAnimationFrame(()=>{requestAnimationFrame(()=>{
+            r.style.transition='transform .55s cubic-bezier(.2,.85,.25,1)'; r.style.transform='';
+          });});
+        }
+      }
+      const oi=oldIndex[k];
+      if(oi!=null && ni<oi) r.classList.add('climbed');   // поднялась в рейтинге → вспышка
+    });
+    showRankToast();
+  }
+  lastRankSig=sig; lastRankOrder=order.map(c=>c.key); lastMyEff=myEff;
+}
+function showRankToast(){
+  const t=$('rankToast'); if(!t)return;
+  t.classList.remove('show'); void t.offsetWidth; t.classList.add('show');
 }
 
 /* ============================================================
