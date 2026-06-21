@@ -169,11 +169,29 @@
     background:repeating-linear-gradient(0deg,rgba(255,255,255,.05) 0 1px,transparent 1px 3px)}
   .crt.think::before{animation:flick .25s steps(2) infinite}
   @keyframes flick{50%{box-shadow:inset 0 0 26px rgba(255,157,60,.5)}}
-  .seat .name{font-size:13px;font-weight:700;color:#dfeee8}
+  .seat .name{font-size:13px;font-weight:700;color:#dfeee8;display:flex;align-items:center;gap:6px;justify-content:center}
   .seat .stack{font-size:12px;color:var(--gold)}
   .seat .act{font-size:11px;color:var(--amber);min-height:14px;font-weight:700}
   .seat.folded{opacity:.34;filter:grayscale(.6)}
   .seat .mini-cards{display:flex;gap:4px}
+  .seat.acting{}
+  .seat.acting .crt{box-shadow:0 0 0 2px var(--neon),0 0 22px rgba(25,227,177,.6),0 8px 18px -8px #000}
+
+  /* дилерская кнопка */
+  .dealer-btn{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,#fff,#cfd3cf);color:#10242a;font-size:10px;font-weight:900;
+    box-shadow:0 2px 6px -1px #000;border:1px solid #8a908a}
+
+  /* фишки ставки игрока на столе */
+  .bet-chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;color:#0b1a16;
+    background:linear-gradient(180deg,var(--gold),#d9a521);padding:3px 9px 3px 6px;border-radius:20px;
+    box-shadow:0 4px 10px -4px rgba(0,0,0,.8), inset 0 0 0 2px rgba(255,255,255,.25);
+    animation:chipin .3s ease both;min-height:20px}
+  .bet-chip::before{content:"";width:12px;height:12px;border-radius:50%;flex:none;
+    background:repeating-conic-gradient(#b8121f 0deg 30deg,#fff 30deg 60deg);box-shadow:0 0 0 1px #7a0c14}
+  .bet-chip.blind{background:linear-gradient(180deg,#bcdcff,#7fb0e6)}
+  @keyframes chipin{from{opacity:0;transform:translateY(-8px) scale(.7)}to{opacity:1;transform:none}}
+  .bet-slot{min-height:24px;display:flex;justify-content:center;align-items:center;margin-top:4px}
 
   .center{display:flex;flex-direction:column;align-items:center;gap:10px;padding:6px 0}
   .pot{font-size:13px;color:#bfe;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.08);
@@ -181,7 +199,9 @@
   .pot b{color:var(--gold)}
   .community{display:flex;gap:8px;min-height:70px}
 
-  .seat-you{margin-top:6px;display:flex;flex-direction:column;align-items:center;gap:8px}
+  .seat-you{margin-top:6px;display:flex;flex-direction:column;align-items:center;gap:6px}
+  .seat-you .name{font-size:13px;font-weight:700;color:#dfeee8;display:flex;align-items:center;gap:6px}
+  .seat-you.acting .your-cards{filter:drop-shadow(0 0 10px rgba(25,227,177,.5))}
   .your-cards{display:flex;gap:8px}
 
   /* card faces */
@@ -256,10 +276,15 @@
   .dealer-card .txt{font-size:13px;color:var(--muted);line-height:1.4}
   .dealer-card .txt b{color:var(--ink)}
 
-  .log{height:140px;overflow:auto;font-size:12px;line-height:1.6;color:var(--muted)}
+  .log{height:200px;overflow:auto;font-size:12px;line-height:1.6;color:var(--muted)}
   .log div{padding:1px 0}
   .log .me{color:var(--neon)}
   .log .win{color:var(--gold);font-weight:700}
+  .log .street{color:#bfe;font-weight:800;margin-top:4px;letter-spacing:.04em}
+  .log .shift{color:var(--amber)}
+  .log .ct{display:inline-block;background:#f2f5f2;color:#11242a;border-radius:3px;padding:0 3px;
+    font-weight:800;margin:0 1px;font-size:11px}
+  .log .ct.r{color:var(--red)}
 
   .foot{text-align:center;color:#4a5a54;font-size:12px;padding:30px 0 50px}
   .scroll-target{scroll-margin-top:20px}
@@ -344,7 +369,7 @@
       </div>
     </div>
     <p class="story" style="font-size:16px;color:var(--muted);margin-top:24px">
-      Всё остальное — как в техасском холдеме: 2 карты на руки, 5 общих, ставки на флопе, тёрне и ривере.
+      Всё остальное — как в техасском холдеме: блайнды, 2 карты на руки, 5 общих, торги на префлопе, флопе, тёрне и ривере.
       Меняется только одно — <b style="color:var(--neon)">кто кого бьёт</b>.
     </p>
   </div>
@@ -366,9 +391,10 @@
             <div class="pot">Банк: <b id="potVal">0</b> · Ваш стек: <b id="youStack">—</b></div>
             <div class="community" id="community"></div>
           </div>
-          <div class="seat-you">
+          <div class="seat-you" id="seatYou">
+            <div class="bet-slot" id="youBet"></div>
             <div class="your-cards" id="yourCards"></div>
-            <div style="font-size:12px;color:#cfe">Вы · <span id="youStack2" style="color:var(--gold)">—</span></div>
+            <div class="name" id="youNameRow">Вы · <span id="youStack2" style="color:var(--gold)">—</span></div>
           </div>
         </div>
 
@@ -535,28 +561,69 @@ function beats(a,b){
 /* ============================================================
    ИГРОВОЕ СОСТОЯНИЕ
 ============================================================ */
-const START=1000, ANTE=20, RAISE=40;
+const START=1000, SB=10, BB=20, RAISE=40;
 let players=[
   {name:'Вы', human:true, chips:START},
-  {name:'CRT-7', human:false, chips:START},
-  {name:'VGA-9', human:false, chips:START},
+  {name:'Полина', human:false, chips:START},
+  {name:'Ваня', human:false, chips:START},
 ];
 let deck=[], community=[], shown=0, pot=0, probs={}, handLive=false;
+let button=-1;                       // позиция дилерской кнопки
+let streetPrevOrder=null;            // порядок старшинства на прошлой улице (для лога)
 
 const $=id=>document.getElementById(id);
 function log(msg,cls=''){const l=$('log');const d=document.createElement('div');if(cls)d.className=cls;d.innerHTML=msg;l.appendChild(d);l.scrollTop=l.scrollHeight;}
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
+// карта текстом с цветом масти (для лога)
+function cardText(c){const red=RED.includes(c.s);return `<span class="ct ${red?'r':''}">${lab(c.r)}${SUITS[c.s]}</span>`;}
+function cardsText(arr){return arr.map(cardText).join(' ');}
+// текущий порядок старшинства (сильные → частые)
+function rankingOrder(pr){return CATS.slice().sort((a,b)=> pr[a.key]-pr[b.key] || b.order-a.order);}
+// человекочитаемое описание сдвига старшинства между улицами
+function describeRankShift(prevOrder,newOrder,prevProbs,newProbs){
+  if(!prevOrder) return '';
+  const oldIdx={},newIdx={};
+  prevOrder.forEach((c,i)=>oldIdx[c.key]=i);
+  newOrder.forEach((c,i)=>newIdx[c.key]=i);
+  const msgs=[];
+  // что-то стало гарантированным (легло на стол)
+  newOrder.forEach(c=>{
+    if(newProbs[c.key]>0.999 && (!prevProbs||prevProbs[c.key]<=0.999))
+      msgs.push(`«${c.label}» теперь на столе — обесценился`);
+  });
+  // самый заметный «подъём» комбинации
+  let bestClimber=null,bestDelta=0;
+  newOrder.forEach(c=>{
+    const d=oldIdx[c.key]-newIdx[c.key];
+    if(d>bestDelta){bestDelta=d;bestClimber=c;}
+  });
+  if(bestClimber){
+    // кого он обогнал — самую сильную из тех, кто был выше, а стал ниже
+    let overtaken=null;
+    newOrder.forEach(k=>{
+      if(oldIdx[k.key]<oldIdx[bestClimber.key] && newIdx[k.key]>newIdx[bestClimber.key]){
+        if(!overtaken || newIdx[k.key]<newIdx[overtaken.key]) overtaken=k;
+      }
+    });
+    if(overtaken) msgs.push(`«${bestClimber.label}» поднялся выше «${overtaken.label}»`);
+    else msgs.push(`«${bestClimber.label}» поднялся в старшинстве`);
+  }
+  return msgs.length?msgs.join('; '):'старшинство почти не изменилось';
+}
+
 function resetHandState(){
   deck=fullDeck();
   for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
   community=[];shown=0;pot=0;probs={};
-  prevShown=0; holeAnimated=false; lastRankSig=null; lastRankOrder=null;
+  prevShown=0; holeAnimated=false; lastRankSig=null; lastRankOrder=null; lastMyEff=null; streetPrevOrder=null;
   players.forEach(p=>{
     p.folded=p.chips<=0; p.out=p.chips<=0; p.allIn=false;
-    p.hole=[]; p.roundBet=0; p.totalBet=0; p.actTxt='';
+    p.hole=[]; p.roundBet=0; p.totalBet=0; p.actTxt=''; p.acting=false; p.revealHole=false;
   });
 }
+// места (не выбывшие) по часовой стрелке начиная с seat
+function seatsFrom(seat){const res=[],n=players.length;for(let k=0;k<n;k++){const idx=(seat+k)%n;if(!players[idx].out)res.push(idx);}return res;}
 const inHand=()=>players.filter(p=>!p.folded);
 
 /* ============================================================
@@ -573,17 +640,26 @@ function cardHTML(c,opts={}){
   return `<div class="card ${red} ${sm}" ${st}>${lab(c.r)}<span class="suit">${SUITS[c.s]}</span></div>`;
 }
 
+// визуализация ставки игрока фишкой
+function betChip(p){
+  if(!p||p.out||!p.roundBet) return '';
+  const blind = /блайнд/.test(p.actTxt||'')?'blind':'';
+  return `<span class="bet-chip ${blind}">${p.roundBet}</span>`;
+}
+
 let prevShown=0, holeAnimated=false;
 function render(){
   // боты сверху (вскрытые карты не переанимируем)
-  $('seatsTop').innerHTML=players.slice(1).map((p,i)=>{
+  $('seatsTop').innerHTML=players.map((p,idx)=>({p,idx})).slice(1).map(({p,idx})=>{
     const cards = p.out?'' :
       (p.revealHole? p.hole.map(c=>cardHTML(c,{small:true,noAnim:true})).join('')
                    : (p.folded?'':cardHTML(null,{back:true,small:true,noAnim:true}).repeat(2)));
-    return `<div class="seat ${p.folded?'folded':''}">
+    const dbtn = idx===button?'<span class="dealer-btn">D</span>':'';
+    return `<div class="seat ${p.folded?'folded':''} ${p.acting?'acting':''}">
       <div class="crt ${p.thinking?'think':''}"></div>
       <div class="mini-cards">${cards}</div>
-      <div class="name">${p.name}</div>
+      <div class="bet-slot">${betChip(p)}</div>
+      <div class="name">${dbtn}${p.name}</div>
       <div class="stack">${p.out?'выбыл':p.chips+' фишек'}</div>
       <div class="act">${p.actTxt||''}</div>
     </div>`;
@@ -605,9 +681,12 @@ function render(){
     $('yourCards').innerHTML=you.hole.map((c,idx)=>cardHTML(c, animate?{delay:idx*0.22}:{noAnim:true})).join('');
     holeAnimated=true;
   } else $('yourCards').innerHTML=cardHTML(null).repeat(2);
+  $('youBet').innerHTML=betChip(you);
+  $('seatYou').className='seat-you'+(you.acting?' acting':'')+(you.folded?' folded':'');
+  const youD = button===0?'<span class="dealer-btn">D</span> ':'';
+  $('youNameRow').innerHTML=youD+'Вы · <span style="color:var(--gold)">'+you.chips+' фишек</span>'+(you.actTxt?' · <span style="color:var(--amber)">'+you.actTxt+'</span>':'');
   $('potVal').textContent=pot;
   $('youStack').textContent=you.chips;
-  $('youStack2').textContent=you.chips+' фишек';
   renderRanking();
 }
 
@@ -699,9 +778,21 @@ window.act=function(type,amount){
   r({type,amount});
 };
 
+// сила стартовой руки на префлопе (нет общих карт)
+function preflopStrength(hole){
+  const a=hole[0],b=hole[1];
+  const hi=Math.max(a.r,b.r),lo=Math.min(a.r,b.r);
+  let s=(hi+lo)/2/14*0.55;
+  if(a.r===b.r) s=0.5+(a.r/14)*0.5;            // карманная пара
+  if(a.s===b.s) s+=0.06;                        // одномастные
+  if(a.r!==b.r && Math.abs(a.r-b.r)<=2) s+=0.05;// коннекторы
+  if(hi===14) s+=0.05;
+  return Math.max(0,Math.min(1,s));
+}
 function aiDecision(p,currentBet){
-  const eff=effective(p.hole,community.slice(0,shown),probs);
-  const strength=1-eff.prob;            // редкая рука → сильнее
+  const preflop = shown<3 || !Object.keys(probs).length;
+  const strength = preflop ? preflopStrength(p.hole)
+                           : 1-effective(p.hole,community.slice(0,shown),probs).prob;
   const toCall=currentBet-p.roundBet;
   const r=Math.random();
   if(toCall===0){
@@ -717,15 +808,20 @@ function aiDecision(p,currentBet){
 
 function commit(p,amt){amt=Math.min(amt,p.chips);p.chips-=amt;p.roundBet+=amt;p.totalBet+=amt;pot+=amt;if(p.chips===0)p.allIn=true;}
 
-async function bettingRound(){
-  players.forEach(p=>{p.roundBet=0;p.needAct=!p.folded&&!p.allIn&&!p.out;});
-  let currentBet=0,i=0,safety=0;
-  while(players.some(p=>p.needAct)&&safety++<60){
+async function bettingRound(startIdx, opts={}){
+  const preflop=!!opts.preflop;
+  // на префлопе блайнды уже в roundBet; на остальных улицах сбрасываем взносы улицы
+  if(!preflop) players.forEach(p=>{p.roundBet=0; if(!p.folded&&!p.out) p.actTxt='';});
+  players.forEach(p=>{p.needAct=!p.folded&&!p.allIn&&!p.out;});
+  let currentBet=opts.currentBet||0;
+  let i=startIdx, safety=0;
+  while(players.some(p=>p.needAct)&&safety++<80){
     const p=players[i];
     if(p.needAct){
+      players.forEach(q=>q.acting=false); p.acting=true;
       let dec;
       if(p.human){ render(); dec=await humanTurn(currentBet); }
-      else{ p.thinking=true;render();await sleep(600+Math.random()*500);p.thinking=false; dec=aiDecision(p,currentBet); }
+      else{ p.thinking=true;render();await sleep(650+Math.random()*550);p.thinking=false; dec=aiDecision(p,currentBet); }
 
       if(dec.type==='fold'){p.folded=true;p.needAct=false;p.actTxt='фолд';}
       else if(dec.type==='check'){p.needAct=false;p.actTxt='чек';}
@@ -733,27 +829,39 @@ async function bettingRound(){
       else{ // bet / raise
         const target=Math.min(dec.amount,p.roundBet+p.chips);
         commit(p,target-p.roundBet);currentBet=p.roundBet;p.needAct=false;
-        p.actTxt=(dec.type==='bet'?'бет ':'рейз ')+currentBet;
+        p.actTxt=(dec.type==='bet'?'бет ':'рейз до ')+currentBet;
         players.forEach(q=>{if(q!==p&&!q.folded&&!q.allIn&&!q.out)q.needAct=true;});
       }
+      p.acting=false;
       log(`<span class="${p.human?'me':''}">${p.name}: ${p.actTxt}</span>`);
       render();
-      if(inHand().length<=1) return;
+      if(inHand().length<=1){players.forEach(q=>q.acting=false);return;}
     }
     i=(i+1)%players.length;
   }
+  players.forEach(q=>q.acting=false);
 }
 
 /* ============================================================
    РАЗДАЧА
 ============================================================ */
 async function revealStreet(n,title){
-  while(community.length<n){const c=deck.pop();community.push(c);}
+  const newCards=[];
+  while(community.length<n){const c=deck.pop();community.push(c);newCards.push(c);}
   shown=n;
+  const prevProbs=Object.keys(probs).length?probs:null;
   probs=computeRanking(community.slice(0,shown));
-  log(`<b style="color:#cfe">— ${title} —</b>`);
+  const newOrder=rankingOrder(probs);
+  // лог: какие карты вышли
+  log(`<span class="street">— ${title}: ${cardsText(newCards)} —</span>`);
+  log(`Стол: ${cardsText(community.slice(0,shown))}`);
+  // лог: как изменилось старшинство
+  const shift=describeRankShift(streetPrevOrder,newOrder,streetPrevOrder?prevProbs:null,probs);
+  if(shift) log(`<span class="shift">↕ Старшинство: ${shift}</span>`);
+  else log(`<span class="shift">Старшинство (сильные→частые): ${newOrder.slice(0,4).map(c=>c.label).join(' › ')} …</span>`);
+  streetPrevOrder=newOrder;
   render();
-  await sleep(450);
+  await sleep(550);
 }
 
 async function playHand(){
@@ -761,18 +869,37 @@ async function playHand(){
   resetHandState();
   setActions('');
   $('log').innerHTML='';
-  log('Новая раздача. Анте по '+ANTE+'.');
-  players.forEach(p=>{if(!p.out)commit(p,ANTE);});
-  players.forEach(p=>{p.revealHole=false;p.totalBet=p.totalBet;}); // ante уже в totalBet
+
+  // двигаем дилерскую кнопку на следующее не выбывшее место
+  do{ button=(button+1)%players.length; }while(players[button].out);
+  const seats=seatsFrom(button);
+  let sbSeat,bbSeat,firstPreflop,firstPostflop;
+  if(seats.length===2){              // хедз-ап: кнопка = малый блайнд
+    sbSeat=seats[0]; bbSeat=seats[1]; firstPreflop=sbSeat; firstPostflop=bbSeat;
+  }else{                             // 3 игрока
+    sbSeat=seats[1]; bbSeat=seats[2]; firstPreflop=seats[0]; firstPostflop=seats[1];
+  }
+
+  log(`<span class="street">— НОВАЯ РАЗДАЧА —</span>`);
+  log(`Дилер (кнопка): <b>${players[button].name}</b>`);
+  // блайнды
+  commit(players[sbSeat],SB); players[sbSeat].actTxt='малый блайнд '+SB;
+  commit(players[bbSeat],BB); players[bbSeat].actTxt='большой блайнд '+BB;
+  log(`Блайнды: <b>${players[sbSeat].name}</b> — ${SB} (малый), <b>${players[bbSeat].name}</b> — ${BB} (большой).`);
+
   // раздаём по 2 карты
   players.forEach(p=>{if(!p.out){p.hole=[deck.pop(),deck.pop()];}});
+  log(`Раздача карт. Ваши карты: ${cardsText(players[0].hole)}.`);
   render();
-  await sleep(300);
+  await sleep(400);
 
-  await revealStreet(3,'ФЛОП');
-  await bettingRound();
-  if(inHand().length>1){await revealStreet(4,'ТЁРН'); await bettingRound();}
-  if(inHand().length>1){await revealStreet(5,'РИВЕР'); await bettingRound();}
+  // ПРЕФЛОП (старшинство ещё классическое — борд пуст)
+  log(`<span class="street">— ПРЕФЛОП — торги до флопа</span>`);
+  await bettingRound(firstPreflop,{preflop:true,currentBet:BB});
+
+  if(inHand().length>1){await revealStreet(3,'ФЛОП'); await bettingRound(firstPostflop);}
+  if(inHand().length>1){await revealStreet(4,'ТЁРН'); await bettingRound(firstPostflop);}
+  if(inHand().length>1){await revealStreet(5,'РИВЕР'); await bettingRound(firstPostflop);}
 
   await showdown();
   handLive=false;
