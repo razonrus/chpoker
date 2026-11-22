@@ -249,7 +249,7 @@
   .rank-row .bar{flex:1.2;height:7px;border-radius:6px;background:rgba(255,255,255,.07);overflow:hidden}
   .rank-row .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--neon),var(--neon-dim));
     transition:width .5s ease}
-  .rank-row .pct{width:46px;text-align:right;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .rank-row .pct{width:56px;text-align:right;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
   .rank-row.guaranteed{opacity:.42}
   .rank-row.guaranteed .lab::after{content:" · на столе";color:var(--amber);font-size:11px}
   .rank-row.guaranteed .bar i{background:linear-gradient(90deg,#5a4a2a,#3a2f18)}
@@ -508,7 +508,7 @@
       <div class="info">
         <div class="num">ПРАВИЛО 03</div>
         <h3>Проценты в реальном времени</h3>
-        <p>Справа в игре всегда видно актуальный рейтинг комбинаций и вероятность каждой. После каждой новой карты порядок может перевернуться.</p>
+        <p>Справа в игре всегда видно актуальный рейтинг комбинаций и вероятность каждой. После каждой новой карты порядок может перевернуться. Сет засчитывается, когда ровно три карты одного ранга, а остальные — разных рангов.</p>
       </div>
     </div>
     <p class="story" style="font-size:16px;color:var(--muted);margin-top:24px">
@@ -552,7 +552,7 @@
         <div class="panel rank-panel">
           <div id="rankToast" class="rank-toast">⚡ Старшинство изменилось</div>
           <h3>🔥 Старшинство сейчас</h3>
-          <div class="sub">от самой редкой (сильной) к частой. % — доля столов, которые могут её собрать.</div>
+          <div class="sub">От самой редкой (сильной) к частой. Процент — доля возможных рук из двух карт, с которыми собирается комбинация.</div>
           <div id="rankList">
             <div style="color:var(--muted);font-size:13px">Рейтинг появится, когда выйдет флоп.</div>
           </div>
@@ -755,7 +755,7 @@ function evaluate(cards){
     highcard:true,
     pair: ranksWith2plus>=1,
     twopair: ranksWith2plus>=2,
-    trips: (trips.length+quads.length)>=1,
+    trips: trips.length===1 && ranksWith2plus===1,
     straight: stHigh>0,
     flush: flushSuit>=0,
     fullhouse: ((trips.length+quads.length)>=1)&&(ranksWith2plus>=2),
@@ -843,6 +843,7 @@ function cardText(c){const red=RED.includes(c.s);return `<span class="ct ${red?'
 function cardsText(arr){return arr.map(cardText).join(' ');}
 // текущий порядок старшинства (сильные → частые)
 function rankingOrder(pr){return CATS.slice().sort((a,b)=> pr[a.key]-pr[b.key] || b.order-a.order);}
+const rankPercent=new Intl.NumberFormat('ru-RU',{style:'percent',maximumFractionDigits:2});
 // человекочитаемое описание сдвига старшинства между улицами
 function describeRankShift(prevOrder,newOrder,prevProbs,newProbs){
   if(!prevOrder) return '';
@@ -954,19 +955,20 @@ function render(){
   if(NET.role==='host') netSendState();   // зеркалим состояние гостю
 }
 
-let lastRankSig=null, lastRankOrder=null, lastMyEff=null;
+let lastRankSig=null, lastRankOrder=null, lastRankProbSig=null, lastMyEff=null;
 function renderRanking(){
   const el=$('rankList');
   if(!Object.keys(probs).length){
     el.innerHTML='<div style="color:var(--muted);font-size:13px">Рейтинг появится, когда выйдет флоп.</div>';
-    lastRankSig=null;lastRankOrder=null;lastMyEff=null;return;
+    lastRankSig=null;lastRankOrder=null;lastRankProbSig=null;lastMyEff=null;return;
   }
   const you=players[viewIndex];
   const myEff=(you.hole&&you.hole.length&&!you.folded&&shown>=3)?effective(you.hole,community.slice(0,shown),probs).key:null;
-  const order=CATS.slice().sort((a,b)=> probs[a.key]-probs[b.key] || b.order-a.order);
+  const order=rankingOrder(probs);
   const sig=order.map(c=>c.key).join(',');
+  const probSig=order.map(c=>probs[c.key]).join(',');
   // ничего не изменилось — не перерисовываем (иначе обрывается анимация перестановки)
-  if(sig===lastRankSig && myEff===lastMyEff && el.querySelector('.rank-row')) return;
+  if(sig===lastRankSig && probSig===lastRankProbSig && myEff===lastMyEff && el.querySelector('.rank-row')) return;
   const changed = lastRankSig!==null && sig!==lastRankSig;
 
   // FLIP: запоминаем старые позиции строк
@@ -975,14 +977,14 @@ function renderRanking(){
   const oldIndex={}; if(lastRankOrder) lastRankOrder.forEach((k,i)=>oldIndex[k]=i);
 
   el.innerHTML=order.map((c,i)=>{
-    const p=probs[c.key], pct=Math.round(p*100);
+    const p=probs[c.key];
     const guaranteed=p>0.999;
     const mine=c.key===myEff;
     return `<div class="rank-row ${guaranteed?'guaranteed':''} ${mine?'mine':''}" data-key="${c.key}">
       <div class="pos">#${i+1}</div>
       <div class="lab">${c.label}</div>
-      <div class="bar"><i style="width:${pct}%"></i></div>
-      <div class="pct">${pct}%</div>
+      <div class="bar"><i style="width:${p*100}%"></i></div>
+      <div class="pct">${rankPercent.format(p)}</div>
     </div>`;
   }).join('');
 
@@ -1003,7 +1005,7 @@ function renderRanking(){
     });
     showRankToast();
   }
-  lastRankSig=sig; lastRankOrder=order.map(c=>c.key); lastMyEff=myEff;
+  lastRankSig=sig; lastRankOrder=order.map(c=>c.key); lastRankProbSig=probSig; lastMyEff=myEff;
 }
 function showRankToast(){
   const t=$('rankToast'); if(!t)return;
@@ -1514,11 +1516,11 @@ function renderCalc(){
   const pr=computeRanking(calcBoard);
   const order=rankingOrder(pr);
   out.innerHTML=order.map((c,i)=>{
-    const p=pr[c.key],pct=Math.round(p*100);
+    const p=pr[c.key];
     const guaranteed=p>0.999;
     return `<div class="rank-row ${guaranteed?'guaranteed':''}">
       <div class="pos">#${i+1}</div><div class="lab">${c.label}</div>
-      <div class="bar"><i style="width:${pct}%"></i></div><div class="pct">${pct}%</div></div>`;
+      <div class="bar"><i style="width:${p*100}%"></i></div><div class="pct">${rankPercent.format(p)}</div></div>`;
   }).join('');
 }
 
